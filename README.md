@@ -9,8 +9,6 @@ throughout the color space.
 
 ## Setup
 
-## Requirements
-
 ### Dependencies
 
 PG-Interp requires the following:
