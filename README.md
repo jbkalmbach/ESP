@@ -1,19 +1,28 @@
 # GP-Spectra
 
 ## Purpose
+GP-Spectra is a way to estimate galaxy spectra using Principal Component
+Analysis (PCA) and Gaussian Processes. Starting from a set of known spectra and
+a set of bandpasses you can predict spectra for other points
+in the color space of your bands both interpolating and extrapolating
+throughout the color space.
 
+## Setup
 
 ## Requirements
-In order to run GP-Spectra you will need to install 1) the LSST simulations software
-(https://confluence.lsstcorp.org/display/SIM/Catalogs+and+MAF) and 2) scikit-learn. Once those are installed
-you can (replacing WORK_DIR with the desired location) add the appropriate form of the following line to your
-'.login' file:
 
-    export PYTHONPATH='$WORK_DIR:$PYTHONPATH'
+### Dependencies
 
-And with the LSST stack installed, once you source the stack you will need to:
+PG-Interp requires the following:
 
-    setup sims_photUtils
+ * numpy
+ * scikit-learn
+
+### To Run
+
+From command line (in bash terminal):
+
+    source setup/setup.sh
 
 Now to use from python, just:
 
