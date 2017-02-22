@@ -1,16 +1,17 @@
 import os
 import math
 import numpy as np
+from sklearn.decomposition import PCA as sklPCA
 from spec_utils.Sed import Sed
+from spec_utils.BandpassDict import BandpassDict
 
 
 class pcaUtils(object):
-
     """Contains utilities for all other PCA routines."""
 
     def loadSpectra(self, directory):
-
-        """Read in spectra from files in given directory.
+        """
+        Read in spectra from files in given directory.
 
         Parameters
         ----------
@@ -21,8 +22,8 @@ class pcaUtils(object):
         -------
         spectraList: list of Sed class instances
             List where each entry is an instance of the Sed class containing
-            the information for one model spectrum."""
-
+            the information for one model spectrum.
+        """
         spectraList = []
         for root, dirs, files in os.walk(directory):
             fileTotal = len(files)
@@ -44,8 +45,8 @@ class pcaUtils(object):
         return spectraList
 
     def scaleSpectrum(self, sedFlux):
-
-        """Norm spectrum so adds up to 1.
+        """
+        Norm spectrum so adds up to 1.
 
         Parameters
         ----------
@@ -55,8 +56,8 @@ class pcaUtils(object):
         Returns
         -------
         normSpec: array
-            The normalized flux array."""
-
+            The normalized flux array.
+        """
         norm = np.sum(sedFlux)
         normSpec = sedFlux/norm
 
@@ -64,8 +65,8 @@ class pcaUtils(object):
 
 
 class pcaSED(pcaUtils):
-
-    """When given a directory containing spectra. This class will create sets
+    """
+    When given a directory containing spectra. This class will create sets
     of eigenspectra in bins created based upon the distribution in color-color
     space. It will also provide the given principal components to recreate
     the spectra using the sets of eigenspectra.
@@ -75,17 +76,16 @@ class pcaSED(pcaUtils):
     directory: str
         Directory where the model spectra are stored.
 
-    filters: list, optional, default: ['u', 'g', 'r', 'i', 'z', 'y']
-        Name of filters to be used for calculating colors. Default are
-        LSST bands.
-
-    bandpassDir: str, optional, default:
-        os.path.join(os.getenv('THROUGHPUTS_DIR'),'baseline')
+    bandpassDir: str
         Location of bandpass files. Default is LSST stack's location for LSST
         filters.
 
-    bandpassRoot: str, optional, default: 'total_'
+    bandpassRoot: str, default: 'total_'
         Root for filenames of bandpasses. Default are LSST Total Bandpasses.
+
+    filters: list, default: ['u', 'g', 'r', 'i', 'z', 'y']
+        Name of filters to be used for calculating colors. Default are
+        LSST bands.
 
     Attributes
     ----------
@@ -117,13 +117,10 @@ class pcaSED(pcaUtils):
         Used to keep track of what to write to output and when reconstructing
         in other methods.
     """
+    def __init__(self, directory, bandpassDir, bandpassRoot='total_',
+                 filters=['u', 'g', 'r', 'i', 'z', 'y']):
 
-    def __init__(self, directory, filters=['u', 'g', 'r', 'i', 'z', 'y'],
-                 bandpassDir=os.path.join(os.getenv('THROUGHPUTS_DIR'),
-                                          'baseline'),
-                 bandpassRoot='total_'):
-
-        self.spectraListMaster = self.loadSpectra(directory)
+        self.spectraListOriginal = self.loadSpectra(directory)
         print 'Done loading spectra from file'
 
         self.filters = filters
@@ -132,10 +129,11 @@ class pcaSED(pcaUtils):
                                                   bandpassDir=bandpassDir,
                                                   bandpassRoot=bandpassRoot)
 
-    def noBlackbodyPCA(self, comps=10, minWavelen=299., maxWavelen=1200.):
-
-        """Read in spectra, then calculate the colors.
-        Bin the spectra by their colors and then perform the PCA on each bin separately.
+    def specPCA(self, comps=10, minWavelen=299., maxWavelen=1200.):
+        """
+        Read in spectra, then calculate the colors.
+        Bin the spectra by their colors and then perform the PCA on each bin
+        separately.
 
         Parameters
         ----------
@@ -143,91 +141,85 @@ class pcaSED(pcaUtils):
             Maximum number of principal components desired.
 
         minWavelen: float, optional, default = 299.
-            Minimum wavelength of spectra to use in creating PCA. Can speed up PCA and minimize number of
-            components needed for accuracy in a defined range.
+            Minimum wavelength of spectra to use in creating PCA. Can speed up
+            PCA and minimize number of components needed for accuracy in a
+            defined range.
 
         maxWavelen: float, optional, default = 1200.
-            Maximum wavelength of spectra to use in creating PCA. Can speed up PCA and minimize number of
-            components needed for accuracy in a defined range.
+            Maximum wavelength of spectra to use in creating PCA. Can speed up
+            PCA and minimize number of components needed for accuracy in a
+            defined range.
         """
-
         self.spectraList = []
 
-        #Resample the spectra over the desired wavelength range. This will make PCA more accurate
-        #where we care about and faster.
-        minWaveIndex = np.where(self.spectraListMaster[0].wavelen >= minWavelen)[0][0]
-        maxWaveIndex = np.where(self.spectraListMaster[0].wavelen <= maxWavelen)[0][-1]
-        wavelenSet = self.spectraListMaster[0].wavelen[minWaveIndex:maxWaveIndex+1]
+        # Resample the spectra over the desired wavelength range. This will
+        # make PCA more accurate where we care about and faster.
+        minWaveIdx = np.where(self.spectraListMaster[0].wavelen >=
+                              minWavelen)[0][0]
+        maxWaveIdx = np.where(self.spectraListMaster[0].wavelen <=
+                              maxWavelen)[0][-1]
+        wavelenSet = self.spectraListMaster[0].wavelen[minWaveIdx:maxWaveIdx+1]
 
         fullMags = []
+        scaledFluxes = []
 
-        for spec in self.spectraListMaster:
+        for spec in self.spectraListOriginal:
 
-            if spec.name.startswith('k'):
-                bbTemp = float(spec.name.split('_')[3].split('.')[0])
-            elif spec.name.startswith('l'):
-                if spec.name[6] == '.':
-                    bbTemp = float(spec.name[3:8])*100.
-                else:
-                    bbTemp = float(spec.name[3:6])*100.
-            else:
-                bbTemp = minTemp+1.
-            if minTemp <= bbTemp <= maxTemp:
-                #Calculate Mags before dividing out blackbody spectrum
-                tempSpec = Sed()
-                tempSpec2 = Sed()
-                #wavelengthArray = np.array([x for x in spec.wavelen])
-                #flambdaArray = np.array([x for x in spec.flambda])
-                tempSpec.setSED(wavelen = spec.wavelen, flambda = spec.flambda)
-                tempSpec2.setSED(wavelen = spec.wavelen, flambda = spec.flambda)
-                tempSpec2.resampleSED(wavelen_match=wavelenSet)
-                tempMags = np.array(self.bandpassDict.magListForSed(tempSpec))
-                fullMags.append(tempMags)
-                tempSpec2.scaleFlux = self.scaleSpectrum(tempSpec2.flambda)
-                tempSpec2.name = spec.name
-                self.spectraList.append(tempSpec2)
+            # Calculate Mags and save resampled and normalized copies of SEDs
+            tempSpec = Sed()
+            tempSpec.setSED(wavelen=spec.wavelen, flambda=spec.flambda)
+            tempMags = np.array(self.bandpassDict.magListForSed(tempSpec))
+            fullMags.append(tempMags)
+            tempSpec.resampleSED(wavelen_match=wavelenSet)
+            tempSpec.scaleFlux = self.scaleSpectrum(tempSpec.flambda)
+            scaledFluxes.append(tempSpec.scaleFlux)
+            tempSpec.name = spec.name
+            self.spectraList.append(tempSpec)
 
-        #Get colors from the mags calculated above.
+        # Get colors from the mags calculated above.
         fullMagsT = np.transpose(np.array(fullMags))
         colorVals = []
         for colorNum in range(0, len(fullMagsT)-1):
             colorVals.append(fullMagsT[colorNum] - fullMagsT[colorNum+1])
-        #Use these colors to bin spectra for PCA
-        if binCenters is None:
-            colorCluster = clusterKM(bins, tol = 1e-6)
-            colorCluster.fit(np.transpose(np.array(colorVals)))
-        else:
-            colorCluster = clusterKM(bins, init = binCenters, n_init=1)
-            colorCluster.fit(np.transpose(np.array(colorVals)))
-        cutLabel = colorCluster.labels_
-        self.cluster_centers = colorCluster.cluster_centers_
-        self.binLabel = cutLabel
 
-        #Start populating attributes in proper bins
-        binnedSpec = [[] for x in range(0, bins)]
-        self.meanSpec = np.zeros((bins, len(self.spectraList[0].wavelen)))
-        self.eigenspectra = [[] for x in range(0, bins)]
-        self.projected = [[] for x in range(0, bins)]
-        self.binnedNames = [[] for x in range(0, bins)]
-        self._binnedSpec = [[] for x in range(0, bins)]
-        self._explained_var = [[] for x in range(0, bins)]
-        for sNum in range(0, len(self.spectraList)):
-            binnedSpec[cutLabel[sNum]].append(self.spectraList[sNum].scaleFlux)
-            self.binnedNames[cutLabel[sNum]].append(self.spectraList[sNum].name)
-        binnedSpec = np.array(binnedSpec)
+        """
+        Calculate the eigenspectra from each bin. Also, keep the mean spectrum
+        for each bin. Then project the model spectra in each bin onto the
+        eigenspectra and keep the desired number of principal components.
+        """
+        spectraPCA = sklPCA(n_components=comps)
+        spectraPCA.fit(scaledFluxes)
+        self.meanSpec = spectraPCA.mean_
+        self.eigenspectra = spectraPCA.components_
+        self.projected = np.array(spectraPCA.transform(scaledFluxes))
+        self.explained_var = spectraPCA.explained_variance_ratio_
 
-        """Calculate the eigenspectra from each bin. Also, keep the mean spectrum for each bin. Then
-        project the model spectra in each bin onto the eigenspectra and keep the desired number of
-        principal components."""
-        for binNum in range(0, bins):
-            binErrorMsg = 'Bin has fewer members than desired number of components. Try lower number of bins.'
-            if len(binnedSpec[binNum]) < compsList[binNum]:
-                compsList[binNum] = len(binnedSpec[binNum])
-                #raise ValueError(binErrorMsg)
-            specPCA = sklPCA(n_components = compsList[binNum])
-            specPCA.fit(binnedSpec[binNum])
-            self.meanSpec[binNum] = specPCA.mean_
-            self.eigenspectra[binNum] = specPCA.components_
-            self.projected[binNum] = np.array(specPCA.transform(binnedSpec[binNum]))
-            self._binnedSpec[binNum] = np.array(binnedSpec[binNum])
-            self._explained_var[binNum] = specPCA.explained_variance_ratio_
+    def writeOutput(self, outFolder):
+        """
+        This routine will write out the eigenspectra, eigencomponents,
+        mean spectrum and wavelength grid to files in a specified output
+        directory with a separate folder for each bin.
+
+        Parameters
+        ----------
+        outFolder = str
+            Folder where information will be stored.
+        """
+
+        np.savetxt(str(outFolder + '/wavelengths.dat'),
+                   self.spectraList[0].wavelen)
+
+        specPath = str(outFolder + '/eigenspectra')
+        os.makedirs(specPath)
+        for spec, specNum in zip(self.eigenspectra,
+                                 range(0, len(self.eigenspectra))):
+            np.savetxt(str(specPath + '/eigenspectra_' +
+                           str(specNum) + '.dat'), spec)
+
+        compPath = str(outFolder + '/components')
+        os.makedirs(compPath)
+        for spec, comps in zip(self.spectraList, self.projected):
+            specName = spec.name
+            np.savetxt(str(compPath + '/' + specName + '.dat'), comps)
+
+        np.savetxt(str(outFolder + '/meanSpectrum.dat'), self.meanSpec)
