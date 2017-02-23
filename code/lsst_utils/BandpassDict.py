@@ -1,10 +1,16 @@
+# Slightly modified to remove lsst_utils call. Otherwise identical to LSST
+# package.
+
 import copy
 import numpy
 import os
-from lsst.utils import getPackageDir
 from collections import OrderedDict
 from .Bandpass import Bandpass
 from .Sed import Sed
+try:
+    from lsst.utils import getPackageDir
+except:
+    pass
 
 __all__ = ["BandpassDict"]
 
@@ -76,12 +82,11 @@ class BandpassDict(object):
     @classmethod
     def loadBandpassesFromFiles(cls,
                                 bandpassNames=['u', 'g', 'r', 'i', 'z', 'y'],
-                                filedir = os.path.join(getPackageDir('throughputs'), 'baseline'),
+                                filedir = None,
                                 bandpassRoot = 'filter_',
                                 componentList = ['detector.dat', 'm1.dat', 'm2.dat', 'm3.dat',
                                                  'lens1.dat', 'lens2.dat', 'lens3.dat'],
-                                atmoTransmission=os.path.join(getPackageDir('throughputs'),
-                                                              'baseline','atmos_std.dat')):
+                                atmoTransmission = None):
         """
         Load bandpass information from files into BandpassDicts.
         This method will separate the bandpasses into contributions due to instrumentations
@@ -114,6 +119,19 @@ class BandpassDict(object):
         the throughput due to instrumentation only
         """
 
+        if filedir is None:
+            try:
+                fileDir = os.path.join(getPackageDir('throughputs'), 'baseline')
+            except:
+                pass
+
+        if atmoTransmission is None:
+            try:
+                atmoTransmission = os.path.join(getPackageDir('throughputs'),
+                                              'baseline','atmos_std.dat')
+            except:
+                pass
+
         commonComponents = []
         for cc in componentList:
             commonComponents.append(os.path.join(filedir,cc))
@@ -142,7 +160,7 @@ class BandpassDict(object):
     @classmethod
     def loadTotalBandpassesFromFiles(cls,
                                     bandpassNames=['u', 'g', 'r', 'i', 'z', 'y'],
-                                    bandpassDir = os.path.join(getPackageDir('throughputs'),'baseline'),
+                                    bandpassDir = None,
                                     bandpassRoot = 'total_'):
         """
         This will take the list of band passes named by bandpassNames and load them into
@@ -166,6 +184,12 @@ class BandpassDict(object):
 
         @param [out] bandpassDict is a BandpassDict containing the loaded throughputs
         """
+
+        if bandpassDir is None:
+            try:
+                bandpassDir = os.path.join(getPackageDir('throughputs'), 'baseline')
+            except:
+                pass
 
         bandpassList = []
 
