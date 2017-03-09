@@ -3,8 +3,7 @@ import math
 import numpy as np
 from sklearn.decomposition import PCA as sklPCA
 from lsst_utils.Sed import Sed
-from lsst_utils.BandpassDict import BandpassDict
-from sklearn.neighbors import NearestNeighbors as nearN
+from sklearn.neighbors import KNeighborsRegressor as knr
 
 
 class specUtils(object):
@@ -348,21 +347,29 @@ class interpBase(object):
 
 class nearestNeighborInterp(interpBase):
 
-    def nn_interp(self, n_neighbors):
+    def nn_interp(self, num_neighbors, knr_args=None):
 
-        neigh = nearN(n_neighbors=n_neighbors)
-        neigh.fit(self.reduced_colors)
-        new_labels = neigh.kneighbors(self.new_colors, return_distance=False)
+        default_knr_args = dict(n_neighbors=num_neighbors)
+
+        if knr_args is not None:
+            default_knr_args.update(knr_args)
+        knr_args = default_knr_args
+
+        neigh = knr(**knr_args)
+        neigh.fit(self.reduced_colors, self.reduced_spec.coeffs)
+        new_coeffs = neigh.predict(self.new_colors)
 
         interp_spec = pcaSED()
         interp_spec.wavelengths = self.reduced_spec.wavelengths
         interp_spec.eigenspectra = self.reduced_spec.eigenspectra
         interp_spec.mean_spec = self.reduced_spec.mean_spec
 
-        interp_coeffs = np.zeros((len(self.new_colors),
-                                  len(self.reduced_spec.coeffs[0])))
-        interp_coeffs = [self.reduced_spec.coeffs[idx] for idx in
-                         new_labels[0]]
-        interp_spec.coeffs = np.array(interp_coeffs)
+        interp_spec.coeffs = new_coeffs
 
         return interp_spec
+
+class gaussianProcessInterp(interpBase):
+
+    def gp_interp(self):
+
+        return
