@@ -1,5 +1,6 @@
 import os
 import math
+import copy
 import george
 import numpy as np
 from sklearn.decomposition import PCA as sklPCA
@@ -386,19 +387,28 @@ class gaussianProcessInterp(interpBase):
 
         return kernel
 
-    def gp_interp(self, kernel):
+    def gp_interp(self, kernel, record_params=True):
 
         n_coeffs = len(self.reduced_spec.coeffs[0])
-
-        gp_obj = george.GP(kernel)
-        gp_obj.compute(self.reduced_colors[:100], 0.)
+        kernel_copy = copy.deepcopy(kernel)
 
         interp_coeffs = []
+        params = []
 
         for coeff_num in range(n_coeffs):
-            mean_coeffs, covar = gp_obj.predict(self.reduced_spec.coeffs[:100,coeff_num],
-                                                self.new_colors)
-            interp_coeffs.append(mean_coeffs)
+
+            gp_obj = george.GP(kernel_copy)
+            gp_obj.compute(self.reduced_colors, 0.)
+
+            pars, res = gp_obj.optimize(self.reduced_colors,
+                                        self.reduced_spec.coeffs[:, coeff_num])
+
+            mean, cov = gp_obj.predict(self.reduced_spec.coeffs[:, coeff_num],
+                                       self.new_colors)
+            interp_coeffs.append(mean)
+
+            if record_params is True:
+                params.append(pars)
 
         interp_spec = pcaSED()
         interp_spec.wavelengths = self.reduced_spec.wavelengths
@@ -406,5 +416,6 @@ class gaussianProcessInterp(interpBase):
         interp_spec.mean_spec = self.reduced_spec.mean_spec
 
         interp_spec.coeffs = np.array(interp_coeffs).T
+        interp_spec.params = params
 
         return interp_spec
