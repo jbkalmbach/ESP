@@ -1,5 +1,6 @@
 import os
 import math
+import george
 import numpy as np
 from sklearn.decomposition import PCA as sklPCA
 from lsst_utils.Sed import Sed
@@ -368,8 +369,42 @@ class nearestNeighborInterp(interpBase):
 
         return interp_spec
 
+
 class gaussianProcessInterp(interpBase):
 
-    def gp_interp(self):
+    def define_kernel(self, kernel_type, length, scale):
 
-        return
+        n_dim = len(self.new_colors[0])
+
+        if kernel_type == 'exp':
+            kernel = scale*george.kernels.ExpKernel(length, ndim=n_dim)
+        elif kernel_type == 'sq_exp':
+            kernel = scale*george.kernels.ExpSquaredKernel(length, ndim=n_dim)
+        else:
+            raise Exception("Only currently accept 'exp' or 'sq_exp' as " +
+                            "kernel types.")
+
+        return kernel
+
+    def gp_interp(self, kernel):
+
+        n_coeffs = len(self.reduced_spec.coeffs[0])
+
+        gp_obj = george.GP(kernel)
+        gp_obj.compute(self.reduced_colors[:100], 0.)
+
+        interp_coeffs = []
+
+        for coeff_num in range(n_coeffs):
+            mean_coeffs, covar = gp_obj.predict(self.reduced_spec.coeffs[:100,coeff_num],
+                                                self.new_colors)
+            interp_coeffs.append(mean_coeffs)
+
+        interp_spec = pcaSED()
+        interp_spec.wavelengths = self.reduced_spec.wavelengths
+        interp_spec.eigenspectra = self.reduced_spec.eigenspectra
+        interp_spec.mean_spec = self.reduced_spec.mean_spec
+
+        interp_spec.coeffs = np.array(interp_coeffs).T
+
+        return interp_spec
