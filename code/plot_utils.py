@@ -33,7 +33,7 @@ class plotUtils(object):
                 flux = gpSpec_inst.eigenspectra[i-1]
                 title_str = 'Eigenspectrum %i' % (i)
 
-            plt.plot(gpSpec_inst.spec_list[0].wavelen, flux)
+            plt.plot(gpSpec_inst.wavelengths, flux)
             plt.xlabel('Wavelength (nm)')
             plt.ylabel('Scaled Flux')
             plt.title(title_str)
