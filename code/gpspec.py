@@ -4,9 +4,10 @@ import numpy as np
 from sklearn.decomposition import PCA as sklPCA
 from lsst_utils.Sed import Sed
 from lsst_utils.BandpassDict import BandpassDict
+from sklearn.neighbors import NearestNeighbors as nearN
 
 
-class gpspecUtils(object):
+class specUtils(object):
     """Contains utilities for package classes."""
 
     def load_spectra(self, directory):
@@ -64,7 +65,7 @@ class gpspecUtils(object):
         return norm_spec
 
 
-class pcaSED(gpspecUtils):
+class pcaSED(specUtils):
     """
     When given a directory containing spectra. This class will create sets
     of eigenspectra in bins created based upon the distribution in color-color
@@ -126,18 +127,32 @@ class pcaSED(gpspecUtils):
         self.wavelengths = None
         self.spec_names = None
 
+        # Needed to perform PCA
+        self.spec_list_orig = None
+
         return
 
-    def load_full_spectra(self, dir_name):
+    def load_full_spectra(self, dir_path):
+        """
+        Load the full spectra from a directory.
 
-        spec_list_orig = self.load_spectra(dir_name)
+        This will store them in self.spec_list_orig so that it is
+        easy to rerun the PCA with different specifications.
+
+        Parameters
+        ----------
+        dir_path: str
+        The path to the directory where the spectra files are stored.
+        """
+
+        self.spec_list_orig = self.load_spectra(dir_path)
         print 'Done loading spectra from file'
 
-        return spec_list_orig
+        return
 
-    def PCA(self, dir_name, comps, minWavelen=299., maxWavelen=1200.):
+    def PCA(self, comps, minWavelen=299., maxWavelen=1200.):
         """
-        Read in spectra then perform the PCA.
+        Perform the PCA.
 
         Parameters
         ----------
@@ -155,22 +170,23 @@ class pcaSED(gpspecUtils):
             defined range.
         """
 
-        spec_list_orig = self.load_full_spectra(dir_name)
+        if self.spec_list_orig is None:
+            raise Exception("Need to load spectra. Use load_full_spectra.")
 
         # Resample the spectra over the desired wavelength range. This will
         # make PCA more accurate where we care about and faster.
-        min_wave_x = np.where(spec_list_orig[0].wavelen >=
+        min_wave_x = np.where(self.spec_list_orig[0].wavelen >=
                               minWavelen)[0][0]
-        max_wave_x = np.where(spec_list_orig[0].wavelen <=
+        max_wave_x = np.where(self.spec_list_orig[0].wavelen <=
                               maxWavelen)[0][-1]
-        wavelen_set = spec_list_orig[0].wavelen[min_wave_x:max_wave_x+1]
+        wavelen_set = self.spec_list_orig[0].wavelen[min_wave_x:max_wave_x+1]
 
         self.wavelengths = wavelen_set
 
         scaled_fluxes = []
         self.spec_names = []
 
-        for spec in spec_list_orig:
+        for spec in self.spec_list_orig:
 
             # Calculate Mags and save resampled and normalized copies of SEDs
             temp_spec = Sed()
@@ -191,7 +207,6 @@ class pcaSED(gpspecUtils):
         self.eigenspectra = spectra_pca.components_
         self.coeffs = np.array(spectra_pca.transform(scaled_fluxes))
         self.explained_var = spectra_pca.explained_variance_ratio_
-
 
     def reconstruct_spectra(self, num_comps):
         """
@@ -241,7 +256,7 @@ class pcaSED(gpspecUtils):
 
         return np.array(reconstructed_colors)
 
-    def write_output(self, out_folder):
+    def write_output(self, out_path):
         """
         This routine will write out the eigenspectra, eigencomponents,
         mean spectrum and wavelength grid to files in a specified output
@@ -249,35 +264,35 @@ class pcaSED(gpspecUtils):
 
         Parameters
         ----------
-        out_folder = str
+        out_path = str
             Folder where information will be stored.
         """
 
-        np.savetxt(str(out_folder + '/wavelengths.dat'),
+        np.savetxt(str(out_path + '/wavelengths.dat'),
                    self.wavelengths)
 
-        spec_path = str(out_folder + '/eigenspectra')
+        spec_path = str(out_path + '/eigenspectra')
         os.makedirs(spec_path)
         for spec, specNum in zip(self.eigenspectra,
                                  range(0, len(self.eigenspectra))):
             np.savetxt(str(spec_path + '/eigenspectra_' +
                            str(specNum) + '.dat'), spec)
 
-        coeff_path = str(out_folder + '/coeffs')
+        coeff_path = str(out_path + '/coeffs')
         os.makedirs(coeff_path)
         for spec_name, coeffs in zip(self.spec_names, self.coeffs):
             np.savetxt(str(coeff_path + '/' + spec_name + '.dat'), coeffs)
 
-        np.savetxt(str(out_folder + '/meanSpectrum.dat'), self.mean_spec)
+        np.savetxt(str(out_path + '/meanSpectrum.dat'), self.mean_spec)
 
-    def load_pca_output(self, dir_name):
+    def load_pca_output(self, dir_path):
 
         """
         This method loads the output from pcaSED's write_output method.
 
         Parameters
         ----------
-        dir_name: str
+        dir_path: str
             Directory where the PCA output files are found.
 
         Returns
@@ -297,18 +312,18 @@ class pcaSED(gpspecUtils):
             The principal components required to reconstruct each spectrum.
         """
 
-        self.wavelengths = np.loadtxt(str(dir_name + '/wavelengths.dat'))
-        self.mean_spec = np.loadtxt(str(dir_name + '/meanSpectrum.dat'))
+        self.wavelengths = np.loadtxt(str(dir_path + '/wavelengths.dat'))
+        self.mean_spec = np.loadtxt(str(dir_path + '/meanSpectrum.dat'))
 
         eigenspectra = []
-        spec_path = str(dir_name + '/eigenspectra/')
+        spec_path = str(dir_path + '/eigenspectra/')
         for spec_name in os.listdir(spec_path):
             eigenspectra.append(np.loadtxt(str(spec_path + spec_name)))
         self.eigenspectra = np.array(eigenspectra)
 
         coeffs = []
         names = []
-        comp_path = str(dir_name + '/coeffs/')
+        comp_path = str(dir_path + '/coeffs/')
         for comp_file in os.listdir(comp_path):
             coeffs.append(np.loadtxt(str(comp_path + comp_file)))
             names.append(comp_file)
@@ -316,3 +331,38 @@ class pcaSED(gpspecUtils):
         self.spec_names = names
 
         return
+
+
+class interpBase(object):
+
+    def __init__(self, reduced_spec, bandpass_dict, new_colors):
+
+        self.reduced_spec = reduced_spec
+        max_comps = len(self.reduced_spec.eigenspectra)
+        self.reduced_colors = self.reduced_spec.calc_colors(bandpass_dict,
+                                                            max_comps)
+        self.new_colors = new_colors
+
+        return
+
+
+class nearestNeighborInterp(interpBase):
+
+    def nn_interp(self, n_neighbors):
+
+        neigh = nearN(n_neighbors=n_neighbors)
+        neigh.fit(self.reduced_colors)
+        new_labels = neigh.kneighbors(self.new_colors, return_distance=False)
+
+        interp_spec = pcaSED()
+        interp_spec.wavelengths = self.reduced_spec.wavelengths
+        interp_spec.eigenspectra = self.reduced_spec.eigenspectra
+        interp_spec.mean_spec = self.reduced_spec.mean_spec
+
+        interp_coeffs = np.zeros((len(self.new_colors),
+                                  len(self.reduced_spec.coeffs[0])))
+        interp_coeffs = [self.reduced_spec.coeffs[idx] for idx in
+                         new_labels[0]]
+        interp_spec.coeffs = np.array(interp_coeffs)
+
+        return interp_spec
