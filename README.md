@@ -15,6 +15,7 @@ PG-Interp requires the following:
 
  * numpy
  * scikit-learn
+ * george
 
 ### To Run
 
