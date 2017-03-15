@@ -62,6 +62,8 @@ install:
     - source activate test
 
     - conda install --yes numpy=$NUMPY_VERSION scipy nose
+    - pip install scikit-learn
+    - pip install george
 
     - source setup/setup.sh
 
