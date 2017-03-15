@@ -20,6 +20,7 @@ install:
     - sudo apt-get install -qq libeigen3-dev
     - pip install scikit-learn
     - pip install george
+    - source setup/setup.sh
 script:
     - cd tests
     - nosetests -v
