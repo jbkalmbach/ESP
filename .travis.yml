@@ -25,8 +25,9 @@ install:
     - hash -r
     - conda config --set always_yes yes --set changeps1 no
     - conda update -q conda
-    - conda create -q -n test-environment --yes python=$TRAVIS_PYTHON_VERSION numpy scipy
+    - conda create -q -n test-environment --yes python=$TRAVIS_PYTHON_VERSION
     - source activate test-environment
+    - conda install --yes numpy scipy
     - sudo apt-get install -qq libeigen3-dev
     - pip install scikit-learn
     - pip install george
