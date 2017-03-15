@@ -1,39 +1,4 @@
-# language: python
-
-
-# #matrix:
-# #  include:
-#     # "Legacy" environments: oldest supported versions, without and with numba
-# #   - python: "2.7"
-# #      env: DEPS="numpy=1.12 scipy=0.18.1"
-
-# python:
-#     - "2.7"
-
-
-# install:
-#     - sudo apt-get update
-#     # We do this conditionally because it saves us some downloading if the
-#     # version is the same.
-#     - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
-#         wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
-#       else
-#         wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-#       fi
-#     - bash miniconda.sh -b -p $HOME/miniconda
-#     - export PATH="$HOME/miniconda/bin:$PATH"
-#     - hash -r
-#     - conda config --set always_yes yes --set changeps1 no
-#     - conda update -q conda
-#     - conda create -q -n test-environment --yes python=$TRAVIS_PYTHON_VERSION
-#     - source activate test-environment
-#     - conda install --yes numpy scipy
-#     - sudo apt-get install -qq libeigen3-dev
-#     - pip install scikit-learn
-#     - pip install george
-#     - source setup/setup.sh
-# script:
-#     - nosetests -v
+# Adapted from version in george repo by Dan Foreman-Mackey
 
 sudo: false
 
@@ -61,8 +26,7 @@ install:
     - conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
     - source activate test
 
-    - conda install --yes numpy=$NUMPY_VERSION scipy nose
-    - pip install scikit-learn
+    - conda install --yes numpy=$NUMPY_VERSION scipy nose scikit-learn
     - pip install george
 
     - source setup/setup.sh
