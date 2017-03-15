@@ -1,37 +1,60 @@
+# language: python
+
+
+# #matrix:
+# #  include:
+#     # "Legacy" environments: oldest supported versions, without and with numba
+# #   - python: "2.7"
+# #      env: DEPS="numpy=1.12 scipy=0.18.1"
+
+# python:
+#     - "2.7"
+
+
+# install:
+#     - sudo apt-get update
+#     # We do this conditionally because it saves us some downloading if the
+#     # version is the same.
+#     - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+#         wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
+#       else
+#         wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+#       fi
+#     - bash miniconda.sh -b -p $HOME/miniconda
+#     - export PATH="$HOME/miniconda/bin:$PATH"
+#     - hash -r
+#     - conda config --set always_yes yes --set changeps1 no
+#     - conda update -q conda
+#     - conda create -q -n test-environment --yes python=$TRAVIS_PYTHON_VERSION
+#     - source activate test-environment
+#     - conda install --yes numpy scipy
+#     - sudo apt-get install -qq libeigen3-dev
+#     - pip install scikit-learn
+#     - pip install george
+#     - source setup/setup.sh
+# script:
+#     - cd tests
+#     - nosetests -v
 language: python
-
-
-#matrix:
-#  include:
-    # "Legacy" environments: oldest supported versions, without and with numba
-#   - python: "2.7"
-#      env: DEPS="numpy=1.12 scipy=0.18.1"
-
 python:
-    - "2.7"
+  - 2.7
+notifications:
+  email: false
 
-
+# Setup anaconda
+before_install:
+  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+  - chmod +x miniconda.sh
+  - ./miniconda.sh -b
+  - export PATH=/home/travis/miniconda/bin:$PATH
+  - conda update --yes conda
+  # The next couple lines fix a crash with multiprocessing on Travis and are not specific to using Miniconda
+  - sudo rm -rf /dev/shm
+  - sudo ln -s /run/shm /dev/shm
+# Install packages
 install:
-    - sudo apt-get update
-    # We do this conditionally because it saves us some downloading if the
-    # version is the same.
-    - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
-        wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
-      else
-        wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-      fi
-    - bash miniconda.sh -b -p $HOME/miniconda
-    - export PATH="$HOME/miniconda/bin:$PATH"
-    - hash -r
-    - conda config --set always_yes yes --set changeps1 no
-    - conda update -q conda
-    - conda create -q -n test-environment --yes python=$TRAVIS_PYTHON_VERSION
-    - source activate test-environment
-    - conda install --yes numpy scipy
-    - sudo apt-get install -qq libeigen3-dev
-    - pip install scikit-learn
-    - pip install george
-    - source setup/setup.sh
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib nose pandas
+  - source setup/setup.sh
+
 script:
-    - cd tests
-    - nosetests -v
+  - nosetests
