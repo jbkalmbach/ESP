@@ -1,4 +1,5 @@
 # ESP (Estimating SPectra)
+[![Build Status](https://travis-ci.org/jbkalmbach/ESP.svg?branch=master)](https://travis-ci.org/jbkalmbach/ESP)
 
 ## Purpose
 ESP is a way to estimate galaxy spectra using Principal Component
