@@ -63,7 +63,7 @@ install:
 
     - conda install --yes numpy=$NUMPY_VERSION scipy nose
 
-    - source setup/setup.py
+    - source setup/setup.sh
 
 script:
     - nosetests -v
