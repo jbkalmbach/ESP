@@ -1,4 +1,6 @@
 import unittest
+import numpy
+import scipy
 
 
 class testGPSpec(unittest.TestCase):
