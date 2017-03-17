@@ -1,4 +1,4 @@
-# ESP (Estimating SPectra)
+# ESP (Estimating Spectra from Photometry)
 [![Build Status](https://travis-ci.org/jbkalmbach/ESP.svg?branch=master)](https://travis-ci.org/jbkalmbach/ESP)
 
 ## Purpose

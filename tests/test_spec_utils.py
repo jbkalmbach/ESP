@@ -29,6 +29,7 @@ class testSpecUtils(unittest.TestCase):
 
         self.assertItemsEqual(self.sample_spec[0], test_spec[0].wavelen)
         self.assertItemsEqual(self.sample_spec[1], test_spec[0].flambda)
+        self.assertEqual('sample.dat', test_spec[0].name)
 
     def test_scale_spectrum(self):
 
