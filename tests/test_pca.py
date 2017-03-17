@@ -44,15 +44,23 @@ class testPCA(unittest.TestCase):
                               self.sample_spec[0])
         self.assertItemsEqual(test_pca.spec_list_orig[1].wavelen,
                               self.sample_spec_2[0])
-        self.assertItemsEqual(test_pca.spec_list_orig[0].flambda,
-                              self.sample_spec[1])
-        self.assertItemsEqual(test_pca.spec_list_orig[1].flambda,
-                              self.sample_spec_2[1])
+
         names = [test_pca.spec_list_orig[0].name,
                  test_pca.spec_list_orig[1].name]
         names.sort()
         self.assertEqual('sample.dat', names[0])
         self.assertEqual('sample_2.dat', names[1])
+
+        if names[0] == 'sample.dat':
+            first = 0
+            second = 1
+        else:
+            first = 1
+            second = 0
+        self.assertItemsEqual(test_pca.spec_list_orig[first].flambda,
+                              self.sample_spec[1])
+        self.assertItemsEqual(test_pca.spec_list_orig[second].flambda,
+                              self.sample_spec_2[1])
 
     def test_PCA(self):
 
