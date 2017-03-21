@@ -213,17 +213,17 @@ class pcaSED(specUtils):
 
         spec_path = str(out_path + '/eigenspectra')
         os.makedirs(spec_path)
-        for spec, specNum in zip(self.eigenspectra,
-                                 range(0, len(self.eigenspectra))):
+        for spec, spec_num in zip(self.eigenspectra,
+                                  range(0, len(self.eigenspectra))):
             np.savetxt(str(spec_path + '/eigenspectra_' +
-                           str(specNum) + '.dat'), spec)
+                           str(spec_num) + '.dat'), spec)
 
         coeff_path = str(out_path + '/coeffs')
         os.makedirs(coeff_path)
         for spec_name, coeffs in zip(self.spec_names, self.coeffs):
             np.savetxt(str(coeff_path + '/' + spec_name + '.dat'), coeffs)
 
-        np.savetxt(str(out_path + '/meanSpectrum.dat'), self.mean_spec)
+        np.savetxt(str(out_path + '/mean_spectrum.dat'), self.mean_spec)
 
     def load_pca_output(self, dir_path):
 
@@ -253,7 +253,7 @@ class pcaSED(specUtils):
         """
 
         self.wavelengths = np.loadtxt(str(dir_path + '/wavelengths.dat'))
-        self.mean_spec = np.loadtxt(str(dir_path + '/meanSpectrum.dat'))
+        self.mean_spec = np.loadtxt(str(dir_path + '/mean_spectrum.dat'))
 
         eigenspectra = []
         spec_path = str(dir_path + '/eigenspectra/')
