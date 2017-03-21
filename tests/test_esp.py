@@ -78,24 +78,22 @@ class testESP(unittest.TestCase):
                             flambda=sample_sed_3_flambda)
         cls.sample_sed_3 = sample_sed_3
 
-        if os.path.exists('scratch'):
-            shutil.rmtree('scratch')
+        if os.path.exists('scratch_esp'):
+            shutil.rmtree('scratch_esp')
 
-        os.mkdir('scratch')
+        os.mkdir('scratch_esp')
         sample_spec = np.array([sample_wavelen, sample_sed.flambda])
-        np.savetxt('scratch/sample.dat', sample_spec.T,
+        np.savetxt('scratch_esp/sample.dat', sample_spec.T,
                    header='Lambda Flux', delimiter=' ')
         sample_spec_2 = np.array([sample_wavelen, sample_sed_2.flambda])
-        np.savetxt('scratch/sample_2.dat', sample_spec_2.T,
+        np.savetxt('scratch_esp/sample_2.dat', sample_spec_2.T,
                    header='Lambda Flux', delimiter=' ')
 
-        os.mkdir('scratch/results')
-        os.mkdir('scratch/results_2')
 
     def test_nearest_neighbor_predict(self):
 
         test_pca = pcaSED()
-        test_pca.load_full_spectra('scratch')
+        test_pca.load_full_spectra('scratch_esp')
         test_pca.PCA(2, 249.9, 1300.1)
         test_colors = test_pca.calc_colors(self.test_bandpass_dict, 2)
         np.testing.assert_array_almost_equal(np.sort(test_colors, axis=0),
@@ -113,7 +111,7 @@ class testESP(unittest.TestCase):
     def test_define_kernel(self):
 
         test_pca = pcaSED()
-        test_pca.load_full_spectra('scratch')
+        test_pca.load_full_spectra('scratch_esp')
         test_pca.PCA(2, 249.9, 1300.1)
         test_colors = test_pca.calc_colors(self.test_bandpass_dict, 2)
         np.testing.assert_array_almost_equal(np.sort(test_colors, axis=0),
@@ -140,7 +138,7 @@ class testESP(unittest.TestCase):
     def test_gp_predict(self):
 
         test_pca = pcaSED()
-        test_pca.load_full_spectra('scratch')
+        test_pca.load_full_spectra('scratch_esp')
         test_pca.PCA(2, 249.9, 1300.1)
         test_colors = test_pca.calc_colors(self.test_bandpass_dict, 2)
         np.testing.assert_array_almost_equal(np.sort(test_colors, axis=0),
@@ -159,8 +157,8 @@ class testESP(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
 
-        if os.path.exists('scratch'):
-            shutil.rmtree('scratch')
+        if os.path.exists('scratch_esp'):
+            shutil.rmtree('scratch_esp')
 
 
 if __name__ == '__main__':
