@@ -1,69 +1,8 @@
 import os
-import math
-import copy
-import george
 import numpy as np
+from spec_utils import specUtils
 from sklearn.decomposition import PCA as sklPCA
 from lsst_utils.Sed import Sed
-from sklearn.neighbors import KNeighborsRegressor as knr
-
-
-class specUtils(object):
-    """Contains utilities for package classes."""
-
-    def load_spectra(self, directory):
-        """
-        Read in spectra from files in given directory.
-
-        Parameters
-        ----------
-        directory: str
-            Location of spectra files.
-
-        Returns
-        -------
-        spec_list: list of Sed class instances
-            List where each entry is an instance of the Sed class containing
-            the information for one model spectrum.
-        """
-        spec_list = []
-        for root, dirs, files in os.walk(directory):
-            file_total = len(files)
-            file_on = 1
-            for name in files:
-                if file_on % 100 == 0:
-                    print str("File On " + str(file_on) + " out of " +
-                              str(file_total))
-                file_on += 1
-                try:
-                    spec = Sed()
-                    spec.readSED_flambda(os.path.join(root, name))
-                    spec.name = name
-                    if math.isnan(spec.flambda[0]) is False:
-                        spec_list.append(spec)
-                except:
-                    continue
-
-        return spec_list
-
-    def scale_spectrum(self, sed_flux):
-        """
-        Norm spectrum so adds up to 1.
-
-        Parameters
-        ----------
-        sedFlux: array
-            The flux array of an SED.
-
-        Returns
-        -------
-        norm_spec: array
-            The normalized flux array.
-        """
-        norm = np.sum(sed_flux)
-        norm_spec = sed_flux/norm
-
-        return norm_spec
 
 
 class pcaSED(specUtils):
@@ -274,17 +213,17 @@ class pcaSED(specUtils):
 
         spec_path = str(out_path + '/eigenspectra')
         os.makedirs(spec_path)
-        for spec, specNum in zip(self.eigenspectra,
-                                 range(0, len(self.eigenspectra))):
+        for spec, spec_num in zip(self.eigenspectra,
+                                  range(0, len(self.eigenspectra))):
             np.savetxt(str(spec_path + '/eigenspectra_' +
-                           str(specNum) + '.dat'), spec)
+                           str(spec_num) + '.dat'), spec)
 
         coeff_path = str(out_path + '/coeffs')
         os.makedirs(coeff_path)
         for spec_name, coeffs in zip(self.spec_names, self.coeffs):
             np.savetxt(str(coeff_path + '/' + spec_name + '.dat'), coeffs)
 
-        np.savetxt(str(out_path + '/meanSpectrum.dat'), self.mean_spec)
+        np.savetxt(str(out_path + '/mean_spectrum.dat'), self.mean_spec)
 
     def load_pca_output(self, dir_path):
 
@@ -314,7 +253,7 @@ class pcaSED(specUtils):
         """
 
         self.wavelengths = np.loadtxt(str(dir_path + '/wavelengths.dat'))
-        self.mean_spec = np.loadtxt(str(dir_path + '/meanSpectrum.dat'))
+        self.mean_spec = np.loadtxt(str(dir_path + '/mean_spectrum.dat'))
 
         eigenspectra = []
         spec_path = str(dir_path + '/eigenspectra/')
@@ -332,90 +271,3 @@ class pcaSED(specUtils):
         self.spec_names = names
 
         return
-
-
-class interpBase(object):
-
-    def __init__(self, reduced_spec, bandpass_dict, new_colors):
-
-        self.reduced_spec = reduced_spec
-        max_comps = len(self.reduced_spec.eigenspectra)
-        self.reduced_colors = self.reduced_spec.calc_colors(bandpass_dict,
-                                                            max_comps)
-        self.new_colors = new_colors
-
-        return
-
-
-class nearestNeighborInterp(interpBase):
-
-    def nn_interp(self, num_neighbors, knr_args=None):
-
-        default_knr_args = dict(n_neighbors=num_neighbors)
-
-        if knr_args is not None:
-            default_knr_args.update(knr_args)
-        knr_args = default_knr_args
-
-        neigh = knr(**knr_args)
-        neigh.fit(self.reduced_colors, self.reduced_spec.coeffs)
-        new_coeffs = neigh.predict(self.new_colors)
-
-        interp_spec = pcaSED()
-        interp_spec.wavelengths = self.reduced_spec.wavelengths
-        interp_spec.eigenspectra = self.reduced_spec.eigenspectra
-        interp_spec.mean_spec = self.reduced_spec.mean_spec
-
-        interp_spec.coeffs = new_coeffs
-
-        return interp_spec
-
-
-class gaussianProcessInterp(interpBase):
-
-    def define_kernel(self, kernel_type, length, scale):
-
-        n_dim = len(self.new_colors[0])
-
-        if kernel_type == 'exp':
-            kernel = scale*george.kernels.ExpKernel(length, ndim=n_dim)
-        elif kernel_type == 'sq_exp':
-            kernel = scale*george.kernels.ExpSquaredKernel(length, ndim=n_dim)
-        else:
-            raise Exception("Only currently accept 'exp' or 'sq_exp' as " +
-                            "kernel types.")
-
-        return kernel
-
-    def gp_interp(self, kernel, record_params=True):
-
-        n_coeffs = len(self.reduced_spec.coeffs[0])
-        kernel_copy = copy.deepcopy(kernel)
-
-        interp_coeffs = []
-        params = []
-
-        for coeff_num in range(n_coeffs):
-
-            gp_obj = george.GP(kernel_copy)
-            gp_obj.compute(self.reduced_colors, 0.)
-
-            pars, res = gp_obj.optimize(self.reduced_colors,
-                                        self.reduced_spec.coeffs[:, coeff_num])
-
-            mean, cov = gp_obj.predict(self.reduced_spec.coeffs[:, coeff_num],
-                                       self.new_colors)
-            interp_coeffs.append(mean)
-
-            if record_params is True:
-                params.append(pars)
-
-        interp_spec = pcaSED()
-        interp_spec.wavelengths = self.reduced_spec.wavelengths
-        interp_spec.eigenspectra = self.reduced_spec.eigenspectra
-        interp_spec.mean_spec = self.reduced_spec.mean_spec
-
-        interp_spec.coeffs = np.array(interp_coeffs).T
-        interp_spec.params = params
-
-        return interp_spec
