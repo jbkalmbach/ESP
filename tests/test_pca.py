@@ -49,6 +49,7 @@ class testPCA(unittest.TestCase):
                                               ['a', 'b'])
 
         os.mkdir('scratch/results')
+        os.mkdir('scratch/results_2')
 
     def test_load_full_spectra(self):
 
@@ -189,6 +190,26 @@ class testPCA(unittest.TestCase):
                 for line in f:
                     eig_array.append(np.float(line))
             np.testing.assert_array_equal(eig_array, eig_spec)
+
+    def test_load_pca_output(self):
+
+        test_pca = pcaSED()
+        test_pca.load_full_spectra('scratch')
+
+        test_pca.PCA(2, 249.9, 1300.1)
+        test_pca.write_output('scratch/results_2')
+
+        test_load_pca = pcaSED()
+        test_load_pca.load_pca_output('scratch/results_2')
+
+        np.testing.assert_array_equal(test_pca.wavelengths,
+                                      test_load_pca.wavelengths)
+        np.testing.assert_array_equal(test_pca.mean_spec,
+                                      test_load_pca.mean_spec)
+        np.testing.assert_array_equal(test_pca.coeffs,
+                                      test_load_pca.coeffs)
+        np.testing.assert_array_equal(test_pca.eigenspectra,
+                                      test_load_pca.eigenspectra)
 
     @classmethod
     def tearDownClass(cls):
