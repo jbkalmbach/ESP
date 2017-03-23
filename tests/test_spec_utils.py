@@ -2,7 +2,7 @@ import unittest
 import os
 import shutil
 import numpy as np
-from spec_utils import specUtils
+from esp import specUtils
 
 
 class testSpecUtils(unittest.TestCase):
