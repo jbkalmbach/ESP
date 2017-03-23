@@ -34,7 +34,7 @@ install:
     - source setup/setup.sh
 
 script:
-    - nosetests -v -s --with-coverage
+    - nosetests -v -s --with-coverage --cover-package=esp
 
 after_success:
     - codecov
