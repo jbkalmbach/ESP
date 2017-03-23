@@ -86,7 +86,8 @@ class gaussianProcessEstimate(estimateBase):
         pred_spec.eigenspectra = self.reduced_spec.eigenspectra
         pred_spec.mean_spec = self.reduced_spec.mean_spec
 
-        pred_spec.coeffs = np.array(pred_coeffs).T
+        pred_coeffs = np.array(pred_coeffs)
+        pred_spec.coeffs = np.transpose(pred_coeffs)
         pred_spec.params = params
 
         return pred_spec
