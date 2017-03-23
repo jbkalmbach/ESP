@@ -1,0 +1,3 @@
+coverage:
+  ignore:
+    - "esp/lsst_utils/*.py"
