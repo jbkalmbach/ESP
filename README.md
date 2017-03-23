@@ -1,5 +1,5 @@
 # ESP (Estimating Spectra from Photometry)
-[![Build Status](https://travis-ci.org/jbkalmbach/ESP.svg?branch=master)](https://travis-ci.org/jbkalmbach/ESP)
+[![Build Status](https://travis-ci.org/jbkalmbach/ESP.svg?branch=master)](https://travis-ci.org/jbkalmbach/ESP)[![codecov.io](https://codecov.io/github/jbkalmbach/ESP/coverage.svg?branch=master)](https://codecov.io/github/jbkalmbach/ESP?branch=master)
 
 ## Purpose
 ESP is a way to estimate galaxy spectra using Principal Component
