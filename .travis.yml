@@ -30,6 +30,7 @@ install:
     - pip install coverage
     - pip install codecov
     - pip install george
+    - pip install pylint
 
     - source setup/setup.sh
 
