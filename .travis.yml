@@ -27,9 +27,14 @@ install:
     - source activate test
 
     - conda install --yes numpy=$NUMPY_VERSION scipy nose scikit-learn
+    - pip install coverage
+    - pip install codecov
     - pip install george
 
     - source setup/setup.sh
 
 script:
-    - nosetests -v
+    - nosetests -v -s --with-coverage --cover-package=ESP
+
+after_success:
+    - codecov
