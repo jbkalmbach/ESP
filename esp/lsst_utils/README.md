@@ -1,4 +1,4 @@
-# `spec_utils`
+# `lsst_utils`
 
 These are files that are copied from the lsst project simulations code found
 in the packages [sims_photUtils](https://github.com/lsst/sims_photUtils). Since
