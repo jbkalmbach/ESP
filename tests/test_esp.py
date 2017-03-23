@@ -2,12 +2,12 @@ import os
 import unittest
 import shutil
 import numpy as np
-from pca import pcaSED
+from esp import pcaSED
 from esp import nearestNeighborEstimate, gaussianProcessEstimate
-from spec_utils import specUtils
-from lsst_utils.Bandpass import Bandpass
-from lsst_utils.BandpassDict import BandpassDict
-from lsst_utils.Sed import Sed
+from esp import specUtils
+from esp.lsst_utils.Bandpass import Bandpass
+from esp.lsst_utils.BandpassDict import BandpassDict
+from esp.lsst_utils.Sed import Sed
 
 
 class testESP(unittest.TestCase):

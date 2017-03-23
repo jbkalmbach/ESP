@@ -26,10 +26,17 @@ install:
     - conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
     - source activate test
 
-    - conda install --yes numpy=$NUMPY_VERSION scipy nose scikit-learn
+    - conda install --yes numpy=$NUMPY_VERSION scipy nose scikit-learn matplotlib
+    - pip install coverage
+    - pip install codecov
     - pip install george
+    - pip install pylint
 
     - source setup/setup.sh
 
 script:
-    - nosetests -v
+    - nosetests -v -s --with-coverage --cover-package=esp
+    - pylint -E esp
+
+after_success:
+    - codecov

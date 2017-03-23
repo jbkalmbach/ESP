@@ -1,4 +1,4 @@
-
+# pylint: skip-file
 __all__ = ["PhysicalParameters"]
 
 class PhysicalParameters(object):
