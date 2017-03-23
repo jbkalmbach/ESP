@@ -35,6 +35,7 @@ install:
 
 script:
     - nosetests -v -s --with-coverage --cover-package=esp
+    - pylint esp
 
 after_success:
     - codecov

@@ -1,3 +1,4 @@
+# pylint: skip-file
 # Slightly modified to remove lsst_utils call. Otherwise identical to LSST
 # package.
 
