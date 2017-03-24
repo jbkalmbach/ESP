@@ -7,63 +7,43 @@ from lsst_utils.Sed import Sed
 
 class pcaSED(specUtils):
     """
-    When given a directory containing spectra. This class will create sets
-    of eigenspectra in bins created based upon the distribution in color-color
-    space. It will also provide the given principal components to recreate
-    the spectra using the sets of eigenspectra.
+    Performs Principal Component Analysis on a given library of spectra.
 
-    Parameters
-    ----------
-    directory: str
-        Directory where the model spectra are stored.
-
-    bandpassDir: str
-        Location of bandpass files. Default is LSST stack's location for LSST
-        filters.
-
-    bandpassRoot: str, default: 'total_'
-        Root for filenames of bandpasses. Default are LSST Total Bandpasses.
-
-    filters: list, default: ['u', 'g', 'r', 'i', 'z', 'y']
-        Name of filters to be used for calculating colors. Default are
-        LSST bands.
+    Also contains methods for input and output of results, reconstructing
+    spectra from principal components and calculating the colors of
+    reconstructed spectra.
 
     Attributes
     ----------
-    cluster_centers: array, [n_bins, n_colors]
-        Location in color-color space of the bin centers used in grouping the
-        model spectra if n_bins > 1.
+    mean_spec: numpy array, [n_bins, n_wavelengths]
+        Set by self.PCA. The mean spectrum of the spectral library.
 
-    meanSpec: array, [n_bins, n_wavelengths]
-        The mean spectrum of each bin. Needs to be added back in when
-        reconstructing the spectra from
-        principal components.
+    eigenspectra: numpy array, [n_bins, n_components, n_wavelengths]
+        Set by self.PCA. These are the eigenspectra derived from the PCA.
 
-    eigenspectra: array, [n_bins, n_components, n_wavelengths]
-        These are the eigenspectra derived from the PCA organized by bin.
+    coeffs: numpy array, [n_bins, n_binMembers, n_components]
+        Set by self.PCA. These are the coefficients for each model spectrum
+        that are associated with the derived eigenspectra.
 
-    projected: array, [n_bins, n_binMembers, n_components]
-        These are the principal components for each model spectrum
-        organized by bin.
+    wavelengths: numpy array
+        Set by self.PCA. Contains the wavelengths of the eigenspectra.
 
-    binnedNames: list, [n_bins, n_binMembers]
-        The names of the model spectra in each bin. Used when writing output.
+    spec_names: list
+        Set by self.PCA. List of the names of the spectra library in the
+        same order that the coefficients are stored.
 
-    temps: array, (only when using blackbodyPCA), [n_bins, n_binMembers]
-        The temperatures of the blackbody spectrum divided out of the model
-        spectrum and needed in order to reconstruct the spectrum.
-
-    pcaType: str
-        'BB' or 'NoBB' depending on which method is used to calculate PCA.
-        Used to keep track of what to write to output and when reconstructing
-        in other methods.
+    spec_list_orig: list
+        Set by self.load_full_spectra. Contains the spectra wavelength and
+        flux information in its original form so that PCA can be run multiple
+        times with different setting without having to reload the spectral
+        library.
     """
     def __init__(self):
 
         # Required for a reduced spectra class
+        self.mean_spec = None
         self.eigenspectra = None
         self.coeffs = None
-        self.mean_spec = None
         self.wavelengths = None
         self.spec_names = None
 
@@ -77,7 +57,9 @@ class pcaSED(specUtils):
         Load the full spectra from a directory.
 
         This will store them in self.spec_list_orig so that it is
-        easy to rerun the PCA with different specifications.
+        easy to rerun the PCA with different specifications. Spectra files
+        should have two columns with left column containing wavelengths
+        and the right containing flux.
 
         Parameters
         ----------
@@ -94,20 +76,21 @@ class pcaSED(specUtils):
         """
         Perform the PCA.
 
+        Performs the PCA on the loaded spectral library and sets the attributes
+        defined in class docstring.
+
         Parameters
         ----------
         comps: int
             Maximum number of principal components desired.
 
         minWavelen: float, optional, default = 299.
-            Minimum wavelength of spectra to use in creating PCA. Can speed up
-            PCA and minimize number of components needed for accuracy in a
-            defined range.
+            Minimum wavelength of spectra to use in creating PCA in units
+            that match those in spectral library files.
 
         maxWavelen: float, optional, default = 1200.
-            Maximum wavelength of spectra to use in creating PCA. Can speed up
-            PCA and minimize number of components needed for accuracy in a
-            defined range.
+            Maximum wavelength of spectra to use in creating PCA in units
+            that match those in spectral library files.
         """
 
         if self.spec_list_orig is None:
@@ -146,7 +129,6 @@ class pcaSED(specUtils):
         self.mean_spec = spectra_pca.mean_
         self.eigenspectra = spectra_pca.components_
         self.coeffs = np.array(spectra_pca.transform(scaled_fluxes))
-        self.explained_var = spectra_pca.explained_variance_ratio_
 
     def reconstruct_spectra(self, num_comps):
         """
@@ -198,6 +180,8 @@ class pcaSED(specUtils):
 
     def write_output(self, out_path):
         """
+        Write PCA attributes to file.
+
         This routine will write out the eigenspectra, eigencomponents,
         mean spectrum and wavelength grid to files in a specified output
         directory with a separate folder for each bin.
@@ -228,28 +212,16 @@ class pcaSED(specUtils):
     def load_pca_output(self, dir_path):
 
         """
-        This method loads the output from pcaSED's write_output method.
+        This method loads the output from self.write_output.
+
+        Loads in the mean spectrum, wavelengths, eigenspectra, coefficients and
+        spectra file names and sets them as attributes as if self.PCA just
+        ran.
 
         Parameters
         ----------
         dir_path: str
             Directory where the PCA output files are found.
-
-        Returns
-        -------
-        wavelengths: numpy array, [# of wavelength points]
-            The wavelengths to which each flux value in the original spectra
-            and eigenspectra corresponds.
-
-        mean_spec: numpy array, [# of wavelength points]
-            The mean spectrum of the PCA. Originally subtracted off before
-            performing PCA.
-
-        eigenspectra: numpy array, [# of components, # of wavelength points]
-            The eigenspectra from PCA on the original spectra.
-
-        components: numpy array, [# of spectra, # of principal components]
-            The principal components required to reconstruct each spectrum.
         """
 
         self.wavelengths = np.loadtxt(str(dir_path + '/wavelengths.dat'))

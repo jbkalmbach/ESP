@@ -7,6 +7,10 @@ from sklearn.neighbors import KNeighborsRegressor as knr
 
 class estimateBase(object):
 
+    """
+    Base class for spectra estimation methods.
+    """
+
     def __init__(self, reduced_spec, bandpass_dict, new_colors):
 
         self.reduced_spec = reduced_spec
@@ -20,7 +24,46 @@ class estimateBase(object):
 
 class nearestNeighborEstimate(estimateBase):
 
+    """
+    Estimates spectra from colors using the spectra of the nearest neighbors.
+
+    Parameters
+    ----------
+    reduced_spec: pcaSED object
+    An ESP pcaSED object.
+
+    bandpass_dict: bandpass_dict object
+    From lsst_utils bandpassDict. Required to calculate colors.
+
+    new_colors: numpy array, [n_objects, n_colors]
+    The colors for the objects in the catalog for which you want to estimate
+    spectra.
+    """
+
     def nn_predict(self, num_neighbors, knr_args=None):
+
+        """
+        Predict the spectra for the given colors using nearest neighbors.
+
+        Parameters
+        ----------
+        num_neighbors: int
+        The number of nearest neighbors to use when estimating the PCA
+        coefficients of spectra based upon the input colors.
+
+        knr_args: dict
+        A dictionary with additional arguments for scikit-learn's
+        k nearest neighbor regression. For instance, the default is a uniform
+        weighting but `knr_args=dict(weights='distance')` would change
+        to distance weighted regression.
+
+        Returns
+        -------
+        pred_spec: pcaSED object
+        A new pcaSED object with the coefficients of the spectra that
+        correspond to the input colors and can be used to generate the
+        estimated spectrum.
+        """
 
         default_knr_args = dict(n_neighbors=num_neighbors)
 
@@ -44,7 +87,47 @@ class nearestNeighborEstimate(estimateBase):
 
 class gaussianProcessEstimate(estimateBase):
 
+    """
+    Estimates spectra from colors using Gaussian Processes.
+
+    Parameters
+    ----------
+    reduced_spec: pcaSED object
+    An ESP pcaSED object.
+
+    bandpass_dict: bandpass_dict object
+    From lsst_utils bandpassDict. Required to calculate colors.
+
+    new_colors: numpy array, [n_objects, n_colors]
+    The colors for the objects in the catalog for which you want to estimate
+    spectra.
+    """
+
     def define_kernel(self, kernel_type, length, scale):
+
+        """
+        Define the george kernel object for the Gaussian Processes.
+
+        Parameters
+        ----------
+        kernel_type: str
+        Currently accept 'exp' or 'sq_exp' for an exponential kernel or a
+        squared exponential kernel.
+
+        length: float
+        An initial guess for the length hyperparameter in the kernel. This
+        will be changed when self.gp_predict optimizes each Gaussian Process
+        for the respective PCA coefficients.
+
+        scale: float
+        An initial guess for the scale hyperparameter in the kernel. This is
+        a constant in front of the exponential or squared exponential of the
+        kernel. This will be changed when self.gp_predict optimizes each
+        Gaussian Process for the respective PCA coefficients.
+
+        Returns
+        -------
+        """
 
         n_dim = len(self.new_colors[0])
 
@@ -59,6 +142,27 @@ class gaussianProcessEstimate(estimateBase):
         return kernel
 
     def gp_predict(self, kernel, record_params=True):
+
+        """
+        Predict the spectra for the given colors using nearest neighbors.
+
+        Parameters
+        ----------
+        kernel: george kernel object
+        The kernel to use in the Gaussian Process regression. Can be created
+        using self.define_kernel.
+
+        record_params: boolean, default=True
+        If true it will record the log of the optimized hyperparameters
+        of the kernel for each PCA coefficient.
+
+        Returns
+        -------
+        pred_spec: pcaSED object
+        A new pcaSED object with the coefficients of the spectra that
+        correspond to the input colors and can be used to generate the
+        estimated spectrum.
+        """
 
         n_coeffs = len(self.reduced_spec.coeffs[0])
         kernel_copy = copy.deepcopy(kernel)
@@ -88,6 +192,8 @@ class gaussianProcessEstimate(estimateBase):
 
         pred_coeffs = np.array(pred_coeffs)
         pred_spec.coeffs = np.transpose(pred_coeffs)
-        pred_spec.params = params
+
+        if record_params is True:
+            pred_spec.params = params
 
         return pred_spec
