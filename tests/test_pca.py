@@ -105,8 +105,6 @@ class testPCA(unittest.TestCase):
         np.testing.assert_equal(control_pca.mean_, test_pca.mean_spec)
         control_coeffs = np.array(control_pca.transform(test_spec))
         np.testing.assert_array_equal(control_coeffs, test_pca.coeffs)
-        control_evr = control_pca.explained_variance_ratio_
-        np.testing.assert_equal(control_evr, test_pca.explained_var)
 
     def test_reconstruct_spectra(self):
 
