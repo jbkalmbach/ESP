@@ -1,2 +1,2 @@
-code_dir=$( cd $(dirname $BASH_SOURCE)/..; pwd -P )
-export PYTHONPATH=${code_dir}/esp:$PYTHONPATH
+package_dir=$( cd $(dirname $BASH_SOURCE)/..; pwd -P )
+export PYTHONPATH=${package_dir}/:$PYTHONPATH
