@@ -17,6 +17,7 @@ ESP requires the following:
  * numpy
  * scikit-learn
  * george
+ * matplotlib
 
 ### To Run
 
