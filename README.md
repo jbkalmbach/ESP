@@ -30,4 +30,4 @@ Now to use from python, just:
     import esp
 
 ## How to Use
-See the example script in the form of an ipython notebook in the examples folder.
+See the [example jupyter notebook](https://github.com/jbkalmbach/ESP/blob/master/examples/esp_example.ipynb) in the examples folder.
