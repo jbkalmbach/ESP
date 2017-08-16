@@ -1,19 +1,23 @@
 # Adapted from version in george repo by Dan Foreman-Mackey
 
-sudo: false
-
 language: python
+compiler: g++
+sudo: required
 
 addons:
     apt:
+        sources:
+            - ubuntu-toolchain-r-test
         packages:
-            - libeigen3-dev
+#            - libeigen3-dev
+            - gcc-4.8
+            - g++-4.8
 
 python:
     - "2.7"
 
 env:
-    - NUMPY_VERSION=1.8
+    - NUMPY_VERSION=1.12
 
 before_install:
     - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
@@ -21,12 +25,20 @@ before_install:
     - ./miniconda.sh -b
     - export PATH=/home/travis/miniconda2/bin:$PATH
     - conda update --yes conda
+    - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+    - sudo apt-get update -qq
+
 
 install:
     - conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
     - source activate test
 
+    - sudo apt-get install -qq g++-5
+    - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-5 90
+    - g++ --version
+
     - conda install --yes numpy=$NUMPY_VERSION scipy nose scikit-learn matplotlib
+    - conda install --yes -c conda-forge pybind11
     - pip install coverage
     - pip install codecov
     - pip install george
