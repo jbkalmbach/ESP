@@ -89,7 +89,6 @@ class testESP(unittest.TestCase):
         np.savetxt('scratch_esp/sample_2.dat', sample_spec_2.T,
                    header='Lambda Flux', delimiter=' ')
 
-
     def test_nearest_neighbor_predict(self):
 
         test_pca = pcaSED()
@@ -120,17 +119,15 @@ class testESP(unittest.TestCase):
         test_gp = gaussianProcessEstimate(test_pca, self.test_bandpass_dict,
                                           [[0.0]])
 
-        test_exp_kernel = test_gp.define_kernel('exp', 1.0, 1.0)
-        np.testing.assert_array_equal(test_exp_kernel.pars, [1.0, 1.0])
-        # George has kernel type 0 for the constant kernel and 3 for exp
-        self.assertEqual(test_exp_kernel.k1.kernel_type, 0)
-        self.assertEqual(test_exp_kernel.k2.kernel_type, 3)
+        test_exp_kernel = test_gp.define_kernel('exp', 1.0, 1.2)
+        # The scale parameter is first when it comes out of the function
+        # because I define it by multiplying it in front of the kernel function
+        np.testing.assert_array_equal(test_exp_kernel.get_parameter_vector(),
+                                      np.log([1.2, 1.0]))
 
-        test_sq_exp_kernel = test_gp.define_kernel('sq_exp', 1.5, 1.5)
-        np.testing.assert_array_equal(test_sq_exp_kernel.pars, [1.5, 1.5])
-        # George also has kernel type 4 for squared exp
-        self.assertEqual(test_sq_exp_kernel.k1.kernel_type, 0)
-        self.assertEqual(test_sq_exp_kernel.k2.kernel_type, 4)
+        test_sqexp_kernel = test_gp.define_kernel('sq_exp', 1.5, 1.7)
+        np.testing.assert_array_equal(test_sqexp_kernel.get_parameter_vector(),
+                                      np.log([1.7, 1.5]))
 
         with self.assertRaises(Exception):
             test_gp.define_kernel('matern', 1.0, 1.0)
