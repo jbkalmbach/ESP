@@ -1,3 +1,5 @@
+# Adapted from version in george repo by Dan Foreman-Mackey
+
 sudo: false
 language: generic
 dist: trusty
@@ -25,7 +27,7 @@ matrix:
 #          env: PYTHON_VERSION=3.6 NUMPY_VERSION=1.12
 
 install:
-    - source travis.sh
+    - source .ci/travis.sh
 
 after success:
     - codecov

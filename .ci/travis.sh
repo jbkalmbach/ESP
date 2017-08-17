@@ -1,5 +1,7 @@
 #!/bin/bash -x
 
+# Adapted from version in george repo by Dan Foreman-Mackey
+
 # http://conda.pydata.org/docs/travis.html#the-travis-yml-file
 if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
   wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh;
@@ -16,8 +18,12 @@ conda update -q conda
 conda info -a
 conda create --yes -n test python=$PYTHON_VERSION
 source activate test
-conda install numpy=$NUMPY_VERSION scipy setuptools pytest pytest-cov jinja2 pyyaml pip
+conda install numpy=$NUMPY_VERSION scipy setuptools pytest nose pytest-cov jinja2 pyyaml pip
 conda install -c conda-forge pybind11
-pip install coveralls
-
+pip install coverage
+pip install codecov
+pip install pylint
 pip install george
+
+nosetests -v -s --with-coverage --cover-package=esp
+pylint -E esp
