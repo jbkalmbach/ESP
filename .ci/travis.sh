@@ -18,7 +18,7 @@ conda update -q conda
 conda info -a
 conda create --yes -n test python=$PYTHON_VERSION
 source activate test
-conda install numpy=$NUMPY_VERSION scipy setuptools pytest nose pytest-cov jinja2 pyyaml pip
+conda install numpy=$NUMPY_VERSION scipy setuptools pytest nose pytest-cov pip scikit-learn
 conda install -c conda-forge pybind11
 pip install coverage
 pip install codecov
