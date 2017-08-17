@@ -1,54 +1,45 @@
-# Adapted from version in george repo by Dan Foreman-Mackey
-
-language: python
-compiler: gcc
+sudo: false
+language: generic
 dist: trusty
 
 addons:
     apt:
-#        sources:
-#            - ubuntu-toolchain-r-test
+        sources:
+            - ubuntu-toolchain-r-test
         packages:
-            - libeigen3-dev
-#            - gcc-4.8
-#            - g++-4.8
-
-python:
-    - "2.7"
+            - gcc-4.8
+            - g++-4.8
 
 env:
-    - NUMPY_VERSION=1.12
+    global:
+        - TEST_LANG='python'
 
-before_install:
-    - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
-    - chmod +x miniconda.sh
-    - ./miniconda.sh -b
-    - export PATH=/home/travis/miniconda2/bin:$PATH
-    - conda update --yes conda
-    - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-    - sudo apt-get update -qq
+matrix:
+    include:
 
+        # Linux, Python 2.7
+        - os: linux
+          env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.10
+        - os: linux
+          env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.11
+        - os: linux
+          env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.12
+
+        # Linux, Python 3.5
+        - os: linux
+          env: PYTHON_VERSION=3.5 NUMPY_VERSION=1.12
+
+        # Linux, Python 3.6
+        - os: linux
+          env: PYTHON_VERSION=3.6 NUMPY_VERSION=1.11
+        - os: linux
+          env: PYTHON_VERSION=3.6 NUMPY_VERSION=1.12
+
+        # OSX
+        - os: osx
+          env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.12
+        - os: osx
+          env: PYTHON_VERSION=3.6 NUMPY_VERSION=1.12
 
 install:
-    - conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
-    - source activate test
-
-    - sudo apt-get install -qq g++-5
-    - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-5 90
-
-    - conda install --yes numpy=$NUMPY_VERSION scipy nose scikit-learn matplotlib
-    - conda install --yes -c conda-forge pybind11
-    - pip install coverage
-    - pip install codecov
-    - g++ --version
-    - pip install george
-    - pip install pylint
-
-    - source setup/setup.sh
-
-script:
-    - nosetests -v -s --with-coverage --cover-package=esp
-    - pylint -E esp
-
-after_success:
-    - codecov
+    - source travis.sh
