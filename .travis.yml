@@ -1,42 +1,33 @@
 # Adapted from version in george repo by Dan Foreman-Mackey
 
 sudo: false
-
-language: python
+language: generic
+dist: trusty
 
 addons:
     apt:
+        sources:
+#            - ubuntu-toolchain-r-test
         packages:
-            - libeigen3-dev
-
-python:
-    - "2.7"
+#            - gcc-4.8
+#            - g++-4.8
 
 env:
-    - NUMPY_VERSION=1.8
+    global:
+        - TEST_LANG='python'
 
-before_install:
-    - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
-    - chmod +x miniconda.sh
-    - ./miniconda.sh -b
-    - export PATH=/home/travis/miniconda2/bin:$PATH
-    - conda update --yes conda
+matrix:
+    include:
+
+
+        # OSX
+        - os: osx
+          env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.12
+#        - os: osx
+#          env: PYTHON_VERSION=3.6 NUMPY_VERSION=1.12
 
 install:
-    - conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
-    - source activate test
+    - source .ci/travis.sh
 
-    - conda install --yes numpy=$NUMPY_VERSION scipy nose scikit-learn matplotlib
-    - pip install coverage
-    - pip install codecov
-    - pip install george
-    - pip install pylint
-
-    - source setup/setup.sh
-
-script:
-    - nosetests -v -s --with-coverage --cover-package=esp
-    - pylint -E esp
-
-after_success:
+after success:
     - codecov

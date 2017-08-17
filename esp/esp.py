@@ -1,6 +1,7 @@
 import copy
 import george
 import numpy as np
+from gp_utils import optimize
 from pca import pcaSED
 from sklearn.neighbors import KNeighborsRegressor as knr
 
@@ -127,6 +128,9 @@ class gaussianProcessEstimate(estimateBase):
 
         Returns
         -------
+        kernel: george kernel object
+        The covariance kernel that will be used in the Gaussian Process
+        Regression.
         """
 
         n_dim = len(self.new_colors[0])
@@ -175,8 +179,8 @@ class gaussianProcessEstimate(estimateBase):
             gp_obj = george.GP(kernel_copy)
             gp_obj.compute(self.reduced_colors, 0.)
 
-            pars, res = gp_obj.optimize(self.reduced_colors,
-                                        self.reduced_spec.coeffs[:, coeff_num])
+            gp_obj, pars = optimize(gp_obj, self.reduced_colors,
+                                    self.reduced_spec.coeffs[:, coeff_num])
 
             mean, cov = gp_obj.predict(self.reduced_spec.coeffs[:, coeff_num],
                                        self.new_colors)
