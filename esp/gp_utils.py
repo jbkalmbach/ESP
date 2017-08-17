@@ -31,7 +31,7 @@ def optimize(gp_obj, x, y, **kwargs):
     def _grad_nll(pars):
 
         gp_obj.set_parameter_vector(pars)
-        return -gp_obj.grad_log_likelihood(pars, quiet=True)
+        return -gp_obj.grad_log_likelihood(y, quiet=True)
 
     p0 = gp_obj.get_parameter_vector()
     if op_kwargs['method'] != 'Nelder-Mead':
