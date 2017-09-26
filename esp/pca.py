@@ -1,8 +1,9 @@
+from __future__ import print_function
 import os
 import numpy as np
-from spec_utils import specUtils
+from .spec_utils import specUtils
 from sklearn.decomposition import PCA as sklPCA
-from lsst_utils.Sed import Sed
+from .lsst_utils.Sed import Sed
 
 
 class pcaSED(specUtils):
@@ -68,7 +69,7 @@ class pcaSED(specUtils):
         """
 
         self.spec_list_orig = self.load_spectra(dir_path)
-        print 'Done loading spectra from file'
+        print('Done loading spectra from file')
 
         return
 

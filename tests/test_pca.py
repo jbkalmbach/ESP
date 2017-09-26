@@ -2,12 +2,15 @@ import os
 import unittest
 import shutil
 import numpy as np
+import sys
 from esp import pcaSED
 from esp import specUtils
 from esp.lsst_utils.Bandpass import Bandpass
 from esp.lsst_utils.BandpassDict import BandpassDict
 from esp.lsst_utils.Sed import Sed
 from sklearn.decomposition import PCA as sklPCA
+
+py_version = sys.version_info.major
 
 
 class testPCA(unittest.TestCase):
@@ -56,10 +59,16 @@ class testPCA(unittest.TestCase):
         test_pca = pcaSED()
         test_pca.load_full_spectra('scratch')
 
-        self.assertItemsEqual(test_pca.spec_list_orig[0].wavelen,
-                              self.sample_spec[0])
-        self.assertItemsEqual(test_pca.spec_list_orig[1].wavelen,
-                              self.sample_spec_2[0])
+        if py_version >= 3:
+            self.assertCountEqual(test_pca.spec_list_orig[0].wavelen,
+                                  self.sample_spec[0])
+            self.assertCountEqual(test_pca.spec_list_orig[1].wavelen,
+                                  self.sample_spec_2[0])
+        else:
+            self.assertItemsEqual(test_pca.spec_list_orig[0].wavelen,
+                                  self.sample_spec[0])
+            self.assertItemsEqual(test_pca.spec_list_orig[1].wavelen,
+                                  self.sample_spec_2[0])
 
         names = [test_pca.spec_list_orig[0].name,
                  test_pca.spec_list_orig[1].name]
@@ -73,10 +82,17 @@ class testPCA(unittest.TestCase):
         else:
             first = 1
             second = 0
-        self.assertItemsEqual(test_pca.spec_list_orig[first].flambda,
-                              self.sample_spec[1])
-        self.assertItemsEqual(test_pca.spec_list_orig[second].flambda,
-                              self.sample_spec_2[1])
+        
+        if py_version >= 3:
+            self.assertCountEqual(test_pca.spec_list_orig[first].flambda,
+                                  self.sample_spec[1])
+            self.assertCountEqual(test_pca.spec_list_orig[second].flambda,
+                                  self.sample_spec_2[1])
+        else:
+            self.assertItemsEqual(test_pca.spec_list_orig[first].flambda,
+                                  self.sample_spec[1])
+            self.assertItemsEqual(test_pca.spec_list_orig[second].flambda,
+                                  self.sample_spec_2[1])
 
     def test_PCA(self):
 
@@ -85,8 +101,12 @@ class testPCA(unittest.TestCase):
 
         test_pca.PCA(2, 249.9, 1300.1)
 
-        self.assertItemsEqual(test_pca.wavelengths,
-                              self.sample_spec[0][50:1101])
+        if py_version >= 3:
+            self.assertCountEqual(test_pca.wavelengths,
+                                  self.sample_spec[0][50:1101])
+        else:
+            self.assertItemsEqual(test_pca.wavelengths,
+                                  self.sample_spec[0][50:1101])
 
         names = test_pca.spec_names
         names.sort()

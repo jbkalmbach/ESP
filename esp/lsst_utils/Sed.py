@@ -22,18 +22,15 @@
 
 """
 sed -
-
 Class data:
 wavelen (nm)
 flambda (ergs/cm^s/s/nm)
 fnu (Jansky)
 zp  (basically translates to units of fnu = -8.9 (if Janskys) or 48.6 (ergs/cm^2/s/hz))
 the name of the sed file
-
 It is important to note the units are NANOMETERS, not ANGSTROMS. It is possible to rig this so you can
 use angstroms instead of nm, but you should know what you're doing and understand the wavelength grid
 limits applied here and in Bandpass.py.
-
 Methods:
  Because of how these methods will be applied for catalog generation, (taking one base SED and then
   applying various dust extinctions and redshifts), many of the methods will either work on,
@@ -57,7 +54,6 @@ Methods:
   for several objects (such as the dust A_x, b_x arrays). This allows the user to optimize their code for
   faster operation, depending on what their requirements are (see example_SedBandpass_star.py and
   exampleSedBandpass_galaxy for examples).
-
 Method include:
   setSED / setFlatSED / readSED_flambda / readSED_fnu -- to input information into Sed wavelen/flambda.
   getSED_flambda / getSED_fnu -- to return wavelen / flambda or fnu to the user.
@@ -78,10 +74,14 @@ if the wavelength range and grid is the same for each SED (calculate a_x/b_x wit
   setPhiArray -- given a list of bandpasses, sets up the 2-d phiArray (for manyMagCalc) and dlambda value.
   manyMagCalc -- given 2-d phiArray and dlambda, this will return an array of magnitudes (in the same
 order as the bandpasses) of this SED in each of those bandpasses.
-
 """
 
 from __future__ import with_statement
+from __future__ import print_function
+from builtins import zip
+from builtins import str
+from builtins import range
+from builtins import object
 import warnings
 import numpy
 import sys
@@ -146,11 +146,9 @@ def _validate_sed_cache():
     Verifies that the pickled SED cache exists, is a dict, and contains
     an entry for every SED in starSED/ and galaxySED.  Does nothing if so,
     raises a RuntimeError if false.
-
     We are doing this here so that sims_sed_library does not have to depend
     on any lsst testing software (in which case, users would have to get
     a new copy of sims_sed_library every time the upstream software changed).
-
     We are doing this through a method (rather than giving users access to
     _global_lsst_sed_cache) so that users do not accidentally ruin
     _global_lsst_sed_cache.
@@ -217,12 +215,10 @@ def _generate_sed_cache(cache_dir, cache_name):
     Read all of the SEDs from sims_sed_library into a dict.
     Pickle the dict and store it in
     sims_photUtils/cacheDir/lsst_sed_cache.p
-
     Parameters
     ----------
     cache_dir is the directory where the cache will be created
     cache_name is the name of the cache to be created
-
     Returns
     -------
     The dict of SEDs (keyed to their full file name)
@@ -241,9 +237,9 @@ def _generate_sed_cache(cache_dir, cache_name):
             total_files += len([name for name in sub_tree[2] if name.endswith('.gz')])
 
     t_start = time.time()
-    print "This could take about 15 minutes."
-    print "Note: not all SED files are the same size. "
-    print "Do not expect the loading rate to be uniform.\n"
+    print("This could take about 15 minutes.")
+    print("Note: not all SED files are the same size. ")
+    print("Do not expect the loading rate to be uniform.\n")
 
     for sub_dir in sub_dir_list:
         dir_tree = os.walk(os.path.join(sed_root, sub_dir))
@@ -266,58 +262,64 @@ def _generate_sed_cache(cache_dir, cache_name):
                     except:
                         pass
 
-    print '\n'
+    print('\n')
 
     with open(os.path.join(cache_dir, cache_name), "wb") as file_handle:
         pickle.dump(cache, file_handle)
 
-    print 'LSST SED cache saved to:\n'
-    print '%s' % os.path.join(cache_dir, cache_name)
+    print('LSST SED cache saved to:\n')
+    print('%s' % os.path.join(cache_dir, cache_name))
 
     # record the specific sims_sed_library directory being cached so that
     # a new cache will be generated if sims_sed_library gets updated
-    with open(os.path.join(cache_dir, "cache_version.txt"), "w") as file_handle:
+    with open(os.path.join(cache_dir, "cache_version_%d.txt" % sys.version_info.major), "w") as file_handle:
         file_handle.write("%s %s" % (sed_root, cache_name))
 
     return cache
 
 
-def cache_LSST_seds():
+def cache_LSST_seds(wavelen_min=None, wavelen_max=None):
     """
     Read all of the SEDs in sims_sed_library into a dict.  Pickle the dict
     and store it in sims_photUtils/cacheDir/lsst_sed_cache.p for future use.
-
     After the file has initially been created, the next time you run this script,
     it will just use pickle to load the dict.
-
     Once the dict is loaded, Sed.readSED_flambda() will be able to read any
     LSST-shipped SED directly from memory, rather than using I/O to read it
     from an ASCII file stored on disk.
-
     Note: the dict of cached SEDs will take up about 5GB on disk.  Once loaded,
     the cache will take up about 1.5GB of memory.  The cache takes about 14 minutes
     to generate and about 51 seconds to load on a 2014 Mac Book Pro.
+    Parameters (optional)
+    ---------------------
+    wavelen_min a float
+    wavelen_max a float
+    if either of these are not None, then every SED in the cache will be
+    truncated to only include the wavelength range (in nm) between
+    wavelen_min and wavelen_max
     """
 
     global _global_lsst_sed_cache
     try:
-        sed_cache_dir = os.path.join(getPackageDir('sims_photUtils'), 'cacheDir')
-        sed_cache_name = os.path.join('lsst_sed_cache.p')
+        sed_cache_dir = os.path.join(getPackageDir('sims_sed_library'), 'lsst_sed_cache_dir')
+        sed_cache_name = os.path.join('lsst_sed_cache_%d.p' % sys.version_info.major)
         sed_dir = getPackageDir('sims_sed_library')
 
     except:
-        raise
         print("You did not install sims_photUtils with the full LSST simulations "
               "stack. You cannot generate and load the cache of LSST SEDs")
         return
 
+    if not os.path.exists(sed_cache_dir):
+        os.mkdir(sed_cache_dir)
+
     must_generate = False
     if not os.path.exists(os.path.join(sed_cache_dir, sed_cache_name)):
         must_generate = True
-    if not os.path.exists(os.path.join(sed_cache_dir, "cache_version.txt")):
+    if not os.path.exists(os.path.join(sed_cache_dir, "cache_version_%d.txt" % sys.version_info.major)):
         must_generate = True
     else:
-        with open(os.path.join(sed_cache_dir, "cache_version.txt"), "r") as input_file:
+        with open(os.path.join(sed_cache_dir, "cache_version_%d.txt" % sys.version_info.major), "r") as input_file:
             lines = input_file.readlines()
             if len(lines) != 1:
                 must_generate = True
@@ -331,11 +333,11 @@ def cache_LSST_seds():
                     must_generate = True
 
     if must_generate:
-        print "\nCreating cache of LSST SEDs in:\n%s" % os.path.join(sed_cache_dir, sed_cache_name)
+        print("\nCreating cache of LSST SEDs in:\n%s" % os.path.join(sed_cache_dir, sed_cache_name))
         cache = _generate_sed_cache(sed_cache_dir, sed_cache_name)
         _global_lsst_sed_cache = cache
     else:
-        print "\nOpening cache of LSST SEDs in:\n%s" % os.path.join(sed_cache_dir, sed_cache_name)
+        print("\nOpening cache of LSST SEDs in:\n%s" % os.path.join(sed_cache_dir, sed_cache_name))
         with open(os.path.join(sed_cache_dir, sed_cache_name), 'rb') as input_file:
             _global_lsst_sed_cache = sed_unpickler(input_file).load()
 
@@ -347,10 +349,26 @@ def cache_LSST_seds():
         _validate_sed_cache()
         _compare_cached_versus_uncached()
     except SedCacheError as ee:
-        print ee.message
-        print "Cannot use cache of LSST SEDs"
+        print(ee.message)
+        print("Cannot use cache of LSST SEDs")
         _global_lsst_sed_cache = None
         pass
+
+    if wavelen_min is not None or wavelen_max is not None:
+        if wavelen_min is None:
+            wavelen_min = 0.0
+        if wavelen_max is None:
+            wavelen_max = numpy.inf
+
+        new_cache = {}
+        list_of_sed_names = list(_global_lsst_sed_cache.keys())
+        for file_name in list_of_sed_names:
+            wav, fl = _global_lsst_sed_cache.pop(file_name)
+            valid_dexes = numpy.where(numpy.logical_and(wav >= wavelen_min,
+                                                        wav <= wavelen_max))
+            new_cache[file_name] = (wav[valid_dexes], fl[valid_dexes])
+
+        _global_lsst_sed_cache = new_cache
 
     return
 
@@ -360,7 +378,6 @@ class Sed(object):
     def __init__(self, wavelen=None, flambda=None, fnu=None, badval=numpy.NaN, name=None):
         """
         Initialize sed object by giving filename or lambda/flambda array.
-
         Note that this does *not* regrid flambda and leaves fnu undefined.
         """
         self.fnu = None
@@ -431,7 +448,6 @@ class Sed(object):
     def setSED(self, wavelen, flambda=None, fnu=None, name='FromArray'):
         """
         Populate wavelen/flambda fields in sed by giving lambda/flambda or lambda/fnu array.
-
         If flambda present, this overrides fnu. Method sets fnu=None unless only fnu is given.
         Sets wavelen/flambda or wavelen/flambda/fnu over wavelength array given.
         """
@@ -484,7 +500,6 @@ class Sed(object):
     def readSED_flambda(self, filename, name=None):
         """
         Read a file containing [lambda Flambda] (lambda in nm) (Flambda erg/cm^2/s/nm).
-
         Does not resample wavelen/flambda onto grid; leave fnu=None.
         """
         global _global_lsst_sed_cache
@@ -517,36 +532,29 @@ class Sed(object):
             sourceflambda = numpy.copy(cached_source[1])
 
         if cached_source is None:
-            try:
-                f = gzip.open(gzipped_filename, 'r')
-            except IOError:
-                try:
-                    f = open(unzipped_filename, 'r')
-                except Exception as e:
-                    # append our message to the message of the error that was actually raised
-                    # code taken form
-                    # http://stackoverflow.com/questions/6062576/adding-information-to-an-exception
-                    new_exception = type(e)(str(e) +
-                                            "\n\nError reading sed file %s; "
-                                            "it may not exist, "
-                                            "or be improperly formatted "
-                                            "(if the file name ends in .gz it should be gzipped; "
-                                            "if not, it should just be a text file)" % filename)
-                    raise type(e), new_exception, sys.exc_info()[2]
-
             # Read source SED from file - lambda, flambda should be first two columns in the file.
             # lambda should be in nm and flambda should be in ergs/cm2/s/nm
-            sourcewavelen = []
-            sourceflambda = []
-            for line in f:
-                if line.startswith("#"):
-                    continue
-                values = line.split()
-                sourcewavelen.append(float(values[0]))
-                sourceflambda.append(float(values[1]))
-            f.close()
-            sourcewavelen = numpy.array(sourcewavelen)
-            sourceflambda = numpy.array(sourceflambda)
+            dtype = numpy.dtype([('wavelen', float), ('flambda', float)])
+            try:
+                data = numpy.genfromtxt(gzipped_filename, dtype=dtype)
+            except IOError:
+                try:
+                    data = numpy.genfromtxt(unzipped_filename, dtype=dtype)
+                except Exception as err:
+                    # see
+                    # http://stackoverflow.com/questions/
+                    # 9157210/how-do-i-raise-the-same-exception-with-a-custom-message-in-python
+                    new_args = [err.args[0] + \
+                                "\n\nError reading sed file %s; " % filename \
+                                + "it may not exist."]
+                    for aa in err.args[1:]:
+                        new_args.append(aa)
+                    err.args = tuple(new_args)
+                    raise
+
+            sourcewavelen = data['wavelen']
+            sourceflambda = data['flambda']
+
             if _global_misc_sed_cache is None:
                 _global_misc_sed_cache = {}
             _global_misc_sed_cache[filename] = (numpy.copy(sourcewavelen),
@@ -564,7 +572,6 @@ class Sed(object):
     def readSED_fnu(self, filename, name=None):
         """
         Read a file containing [lambda Fnu] (lambda in nm) (Fnu in Jansky).
-
         Does not resample wavelen/fnu/flambda onto a grid; leaves fnu set.
         """
         # Try to open the data file.
@@ -644,7 +651,6 @@ class Sed(object):
     def synchronizeSED(self, wavelen_min=None, wavelen_max=None, wavelen_step=None):
         """
         Set all wavelen/flambda/fnu values, potentially on min/max/step grid.
-
         Uses flambda to recalculate fnu. If wavelen min/max/step are given, resamples
         wavelength/flambda/fnu onto an even grid with these values.
         """
@@ -661,7 +667,6 @@ class Sed(object):
     def _checkUseSelf(self, wavelen, flux):
         """
         Simple utility to check if should be using self's data or passed arrays.
-
         Also does data integrity check on wavelen/flux if not self.
         """
         update_self = False
@@ -717,7 +722,6 @@ class Sed(object):
                     wavelen_min=None, wavelen_max=None, wavelen_step=None, force=False):
         """
         Resample flux onto grid defined by min/max/step OR another wavelength array.
-
         Give method wavelen/flux OR default to self.wavelen/self.flambda.
         Method either returns wavelen/flambda (if given those arrays) or updates wavelen/flambda in self.
          If updating self, resets fnu to None.
@@ -769,7 +773,6 @@ class Sed(object):
     def flambdaTofnu(self, wavelen=None, flambda=None):
         """
         Convert flambda into fnu.
-
         This routine assumes that flambda is in ergs/cm^s/s/nm and produces fnu in Jansky.
         Can act on self or user can provide wavelen/flambda and get back wavelen/fnu.
         """
@@ -798,7 +801,6 @@ class Sed(object):
     def fnuToflambda(self, wavelen=None, fnu=None):
         """
         Convert fnu into flambda.
-
         Assumes fnu in units of Jansky and flambda in ergs/cm^s/s/nm.
         Can act on self or user can give wavelen/fnu and get wavelen/flambda returned.
         """
@@ -827,7 +829,6 @@ class Sed(object):
     def redshiftSED(self, redshift, dimming=False, wavelen=None, flambda=None):
         """
         Redshift an SED, optionally adding cosmological dimming.
-
         Pass wavelen/flambda or redshift/update self.wavelen/flambda (unsets fnu).
         """
         # Updating self or passed arrays?
@@ -863,7 +864,6 @@ class Sed(object):
     def setupCCMab(self, wavelen=None):
         """
         Calculate a(x) and b(x) for CCM dust model. (x=1/wavelen).
-
         If wavelen not specified, calculates a and b on the own object's wavelength grid.
         Returns a(x) and b(x) can be common to many seds, wavelen is the same.
         """
@@ -920,7 +920,6 @@ class Sed(object):
     def addCCMDust(self, a_x, b_x, A_v=None, ebv=None, R_v=3.1, wavelen=None, flambda=None):
         """
         Add CCM dust model extinction to the SED, modifying flambda and fnu.
-
         Specify any two of A_V, E(B-V) or R_V (=3.1 default).
         """
         # The extinction law taken from Cardelli, Clayton and Mathis ApJ 1989.
@@ -970,7 +969,6 @@ class Sed(object):
     def multiplySED(self, other_sed, wavelen_step=None):
         """
         Multiply two SEDs together - flambda * flambda - and return a new sed object.
-
         Unless the two wavelength arrays are equal, returns a SED gridded with stepsize wavelen_step
         over intersecting wavelength region. Does not alter self or other_sed.
         """
@@ -1008,24 +1006,17 @@ class Sed(object):
     def calcADU(self, bandpass, photParams, wavelen=None, fnu=None):
         """
         Calculate the number of adu from camera, using sb and fnu.
-
         Given wavelen/fnu arrays or use self. Self or passed wavelen/fnu arrays will be unchanged.
         Calculating the AB mag requires the wavelen/fnu pair to be on the same grid as bandpass;
          (temporary values of these are used).
-
         @param [in] bandpass is an instantiation of the Bandpass class
-
         @param [in] photParams is an instantiation of the
         PhotometricParameters class that carries details about the
         photometric response of the telescope.
-
         @param [in] wavelen (optional) is the wavelength grid in nm
-
         @param [in] fnu (optional) is the flux in Janskys
-
         If wavelen and fnu are not specified, this will just use self.wavelen and
         self.fnu
-
         """
 
         use_self = self._checkUseSelf(wavelen, fnu)
@@ -1067,7 +1058,6 @@ class Sed(object):
     def calcMag(self, bandpass, wavelen=None, fnu=None):
         """
         Calculate the AB magnitude of an object, using phi the normalized system response.
-
         Can pass wavelen/fnu arrays or use self. Self or passed wavelen/fnu arrays will be unchanged.
         Calculating the AB mag requires the wavelen/fnu pair to be on the same grid as bandpass;
          (but only temporary values of these are used).
@@ -1105,14 +1095,11 @@ class Sed(object):
     def calcFlux(self, bandpass, wavelen=None, fnu=None):
         """
         Calculate the F_b (integrated flux of an object, **above the atmosphere**), using phi.
-
         Passed wavelen/fnu arrays will be unchanged, but if uses self will check if fnu is set.
         Calculating the AB mag requires the wavelen/fnu pair to be on the same grid as bandpass;
            (temporary values of these are used).
-
         Note on units: Fluxes calculated this way will be the flux density integrated over the
         weighted response curve of the bandpass.  See equaiton 2.1 of the LSST Science Book
-
         http://www.lsst.org/scientists/scibook
         """
         use_self = self._checkUseSelf(wavelen, fnu)
@@ -1136,7 +1123,6 @@ class Sed(object):
     def calcFluxNorm(self, magmatch, bandpass, wavelen=None, fnu=None):
         """
         Calculate the fluxNorm (SED normalization value for a given mag) for a sed.
-
         Equivalent to adjusting a particular f_nu to Jansky's appropriate for the desired mag.
         Can pass wavelen/fnu or apply to self.
         """
@@ -1160,7 +1146,6 @@ class Sed(object):
     def multiplyFluxNorm(self, fluxNorm, wavelen=None, fnu=None):
         """
         Multiply wavelen/fnu (or self.wavelen/fnu) by fluxnorm.
-
         Returns wavelen/fnu arrays (or updates self).
         Note that multiplyFluxNorm does not regrid self.wavelen/flambda/fnu at all.
         """
@@ -1194,10 +1179,8 @@ class Sed(object):
                        wavelen_step=None):
         """
         Renormalize sed in flambda to have normflux=normvalue @ lambdanorm or averaged over gap.
-
         Can normalized in flambda or fnu values. wavelen_step specifies the wavelength spacing
         when using 'gap'.
-
         Either returns wavelen/flambda values or updates self.
         """
         # Normalizes the fnu/flambda SED at one wavelength or average value over small range (gap).
@@ -1296,7 +1279,6 @@ class Sed(object):
                  wavelen_min=None, wavelen_max=None, wavelen_step=None):
         """
         Write SED (wavelen, flambda, optional fnu) out to file.
-
         Option of adding a header line (such as version info) to output file.
         Does not alter self, regardless of grid or presence/absence of fnu.
         """
@@ -1316,15 +1298,15 @@ class Sed(object):
         # Print standard header info.
         if print_fnu:
             wavelen, fnu = self.flambdaTofnu(wavelen, flambda)
-            print >>f, "# Wavelength(nm)  Flambda(ergs/cm^s/s/nm)   Fnu(Jansky)"
+            print("# Wavelength(nm)  Flambda(ergs/cm^s/s/nm)   Fnu(Jansky)", file=f)
         else:
-            print >>f, "# Wavelength(nm)  Flambda(ergs/cm^s/s/nm)"
+            print("# Wavelength(nm)  Flambda(ergs/cm^s/s/nm)", file=f)
         for i in range(0, len(wavelen), 1):
             if print_fnu:
                 fnu = self.flambdaTofnu(wavelen=wavelen, flambda=flambda)
-                print >> f, wavelen[i], flambda[i], fnu[i]
+                print(wavelen[i], flambda[i], fnu[i], file=f)
             else:
-                print >> f, "%.2f %.7g" % (wavelen[i], flambda[i])
+                print("%.2f %.7g" % (wavelen[i], flambda[i]), file=f)
         # Done writing, close file.
         f.close()
         return
@@ -1335,7 +1317,6 @@ class Sed(object):
     def setupPhiArray(self, bandpasslist):
         """
         Sets up a 2-d numpy phi array from bandpasslist suitable for input to Sed's manyMagCalc.
-
         This is intended to be used once, most likely before using Sed's manyMagCalc many times on many SEDs.
         Returns 2-d phi array and the wavelen_step (dlambda) appropriate for that array.
         """
@@ -1362,37 +1343,28 @@ class Sed(object):
         wavelength grid as the SED in units of ergs/cm^2/sec. It is assumed
         that `self.fnu` is set before calling this method, and that phiArray
         has the same wavelength grid as the Sed.
-
-
         Parameters
         ----------
         phiarray: `np.ndarray`, mandatory
             phiarray corresponding to the list of bandpasses in which the band
             fluxes need to be calculated, in the same wavelength grid as the SED
-
         wavelen_step: `float`, mandatory
             the uniform grid size of the SED
-
         observedBandpassInd: list of integers, optional, defaults to None
             list of indices of phiarray corresponding to observed bandpasses,
             if None, the original phiarray is returned
-
-
         Returns
         -------
         `np.ndarray` with size equal to number of bandpass filters  band flux
         values in units of ergs/cm^2/sec
-
         .. note: Sed.manyFluxCalc `assumes` phiArray has the same wavelenghth
         grid as the Sed and that `sed.fnu` has been calculated for the sed,
         perhaps using `sed.flambdaTofnu()`. This requires calling
         `sed.setupPhiArray()` first. These assumptions are to avoid error
         checking within this function (for speed), but could lead to errors if
         method is used incorrectly.
-
         Note on units: Fluxes calculated this way will be the flux density integrated over the
         weighted response curve of the bandpass.  See equaiton 2.1 of the LSST Science Book
-
         http://www.lsst.org/scientists/scibook
         """
 
@@ -1405,7 +1377,6 @@ class Sed(object):
     def manyMagCalc(self, phiarray, wavelen_step, observedBandpassInd=None):
         """
         Calculate many magnitudes for many bandpasses using a single sed.
-
         This method assumes that there will be flux within a particular bandpass
         (could return '-Inf' for a magnitude if there is none).
         Use setupPhiArray first, and note that Sed.manyMagCalc *assumes*
@@ -1418,14 +1389,11 @@ class Sed(object):
         phiarray: `np.ndarray`, mandatory
             phiarray corresponding to the list of bandpasses in which the band
             fluxes need to be calculated, in the same wavelength grid as the SED
-
         wavelen_step: `float`, mandatory
             the uniform grid size of the SED
-
         observedBandpassInd: list of integers, optional, defaults to None
             list of indices of phiarray corresponding to observed bandpasses,
             if None, the original phiarray is returned
-
         """
         fluxes = self.manyFluxCalc(phiarray, wavelen_step, observedBandpassInd)
         mags = -2.5*numpy.log10(fluxes) - self.zp
@@ -1435,8 +1403,7 @@ class Sed(object):
 def read_close_Kurucz(teff, feH, logg):
     """
     Check the cached Kurucz models and load the model closest to the input stellar parameters.
-    Parameters are matched in order of Teff, feH, and logg. 
-
+    Parameters are matched in order of Teff, feH, and logg.
     Parameters
     ----------
     teff : float
@@ -1445,14 +1412,12 @@ def read_close_Kurucz(teff, feH, logg):
         Metallicity [Fe/H] of stellar template. Values in range -5 to 1.
     logg : float
        Log of the surface gravity for the stellar template. Values in range 0. to 50.
-
     Returns
     -------
     sed : Sed Object
         The SED of the closest matching stellar template
     paramDict : dict
         Dictionary of the teff, feH, logg that were actually loaded
-
     """
     global _global_lsst_sed_cache
 
@@ -1464,9 +1429,10 @@ def read_close_Kurucz(teff, feH, logg):
         kurucz_files = [filename for filename
                         in _global_lsst_sed_cache if ('kurucz' in filename) &
                         ('_g' in os.path.basename(filename))]
+        kurucz_files = list(set(kurucz_files))
         read_close_Kurucz.param_combos = numpy.zeros(len(kurucz_files),
-                                                    dtype=zip(['filename', 'teff', 'feH', 'logg'],
-                                                              ['|S200', float, float, float]))
+                                                    dtype=[('filename', ('|U200')), ('teff', float),
+                                                           ('feH', float), ('logg', float)])
         for i, filename in enumerate(kurucz_files):
             read_close_Kurucz.param_combos['filename'][i] = filename
             filename = os.path.basename(filename)
@@ -1504,5 +1470,3 @@ def read_close_Kurucz(teff, feH, logg):
     sed = Sed()
     sed.readSED_flambda(fileMatch)
     return sed, {'teff': teff, 'feH': feH, 'logg': logg}
-
-

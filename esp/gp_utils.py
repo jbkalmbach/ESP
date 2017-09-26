@@ -15,7 +15,7 @@ def optimize(gp_obj, x, y, **kwargs):
     Parameters
     ----------
     gp_obj: george GP object
-    The george object we are using for the Gaussi
+    The george object we are using for the Gaussian Process Regression
     """
 
     op_kwargs = {'method': 'Nelder-Mead'}

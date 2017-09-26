@@ -1,7 +1,9 @@
+from __future__ import print_function
+from builtins import object
 import os
 import math
 import numpy as np
-from lsst_utils.Sed import Sed
+from .lsst_utils.Sed import Sed
 
 
 class specUtils(object):
@@ -28,8 +30,8 @@ class specUtils(object):
             file_on = 1
             for name in files:
                 if file_on % 100 == 0:
-                    print str("File On " + str(file_on) + " out of " +
-                              str(file_total))
+                    print(str("File On " + str(file_on) + " out of " +
+                              str(file_total)))
                 file_on += 1
                 try:
                     spec = Sed()
