@@ -1,4 +1,5 @@
 # pylint: skip-file
+#
 # LSST Data Management System
 # Copyright 2008, 2009, 2010, 2011, 2012 LSST Corporation.
 #
@@ -22,7 +23,6 @@
 
 """
 bandpass -
-
 Class data:
  wavelen (nm)
  sb  (Transmission, 0-1)
@@ -31,11 +31,9 @@ Class data:
   phi will be None until specifically needed;
      any updates to wavelen/sb within class will reset phi to None.
  the name of the bandpass file
-
 Note that Bandpass objects are required to maintain a uniform grid in wavelength, rather than
 being allowed to have variable wavelength bins. This is because of the method used in 'Sed' to
 calculate magnitudes, but is simpler to enforce here.
-
 Methods:
  __init__ : pass wavelen/sb arrays and set values (on grid) OR set data to None's
  setWavelenLimits / getWavelenLimits: set or get the wavelength limits of bandpass
@@ -54,8 +52,10 @@ Methods:
  calcZP_t : calculate instrumental zeropoint for this bandpass
  calcEffWavelen: calculate the effective wavelength (using both Sb and Phi) for this bandpass
  writeThroughput : utility to write bandpass information to file
-
 """
+from __future__ import print_function
+from builtins import range
+from builtins import object
 import os
 import warnings
 import numpy
@@ -67,7 +67,7 @@ from .Sed import Sed  # For ZP_t and M5 calculations. And for 'fast mags' calcul
 __all__ = ["Bandpass"]
 
 
-class Bandpass:
+class Bandpass(object):
     """
     Class for holding and utilizing telescope bandpasses.
     """
@@ -75,7 +75,6 @@ class Bandpass:
                  wavelen_min=None, wavelen_max=None, wavelen_step=None):
         """
         Initialize bandpass object, with option to pass wavelen/sb arrays in directly.
-
         Also can specify wavelength grid min/max/step or use default - sb and wavelen will
         be resampled to this grid. If wavelen/sb are given, these will be set, but phi
         will be set to None.
@@ -140,7 +139,6 @@ class Bandpass:
                     wavelen_min=None, wavelen_max=None, wavelen_step=None):
         """
         Populate bandpass data with wavelen/sb arrays.
-
         Sets self.wavelen/sb on a grid of wavelen_min/max/step. Phi set to None.
         """
         self.setWavelenLimits(wavelen_min, wavelen_max, wavelen_step)
@@ -163,7 +161,6 @@ class Bandpass:
                       wavelen_min=None, wavelen_max=None, wavelen_step=None):
         """
         Populate bandpass data with sb=0 everywhere except sb=1 at imsimwavelen.
-
         Sets wavelen/sb, with grid min/max/step as optional parameters. Does NOT set phi.
         """
         self.setWavelenLimits(wavelen_min, wavelen_max, wavelen_step)
@@ -180,7 +177,6 @@ class Bandpass:
     def readThroughput(self, filename, wavelen_min=None, wavelen_max=None, wavelen_step=None):
         """
         Populate bandpass data with data (wavelen/sb) read from file, resample onto grid.
-
         Sets wavelen/sb, with grid min/max/step as optional parameters. Does NOT set phi.
         """
         self.setWavelenLimits(wavelen_min, wavelen_max, wavelen_step)
@@ -249,7 +245,6 @@ class Bandpass:
                            wavelen_min=None, wavelen_max=None, wavelen_step=None):
         """
         Populate bandpass data by reading from a series of files with wavelen/Sb data.
-
         Multiplies throughputs (sb) from each file to give a final bandpass throughput.
         Sets wavelen/sb, with grid min/max/step as optional parameters.  Does NOT set phi.
         """
@@ -286,7 +281,6 @@ class Bandpass:
     def checkUseSelf(self, wavelen, sb):
         """
         Simple utility to check if should be using self.wavelen/sb or passed arrays.
-
         Useful for other methods in this class.
         Also does data integrity check on wavelen/sb if not self.
         """
@@ -310,7 +304,6 @@ class Bandpass:
                      wavelen_min=None, wavelen_max=None, wavelen_step=None):
         """
         Return true/false of whether wavelen need to be resampled onto a grid.
-
         Given wavelen OR defaults to self.wavelen/sb - return True/False check on whether
         the arrays need to be resampled to match wavelen_min/max/step grid.
         """
@@ -341,7 +334,6 @@ class Bandpass:
                          wavelen_min=None, wavelen_max=None, wavelen_step=None):
         """
         Resamples wavelen/sb (or self.wavelen/sb) onto grid defined by min/max/step.
-
         Either returns wavelen/sb (if given those arrays) or updates wavelen / Sb in self.
         If updating self, resets phi to None.
         """
@@ -374,7 +366,6 @@ class Bandpass:
     def sbTophi(self):
         """
         Calculate and set phi - the normalized system response.
-
         This function only pdates self.phi.
         """
         # The definition of phi = (Sb/wavelength)/\int(Sb/wavelength)dlambda.
@@ -392,7 +383,6 @@ class Bandpass:
     def multiplyThroughputs(self, wavelen_other, sb_other):
         """
         Multiply self.sb by another wavelen/sb pair, return wavelen/sb arrays.
-
         The returned arrays will be gridded like this bandpass.
         This method does not affect self.
         """
@@ -408,7 +398,6 @@ class Bandpass:
     def calcZP_t(self, photometricParameters):
         """
         Calculate the instrumental zeropoint for a bandpass.
-
         @param [in] photometricParameters is an instantiation of the
         PhotometricParameters class that carries details about the
         photometric response of the telescope.  Defaults to LSST values.
@@ -463,14 +452,14 @@ class Bandpass:
         if write_phi:
             if self.phi is None:
                 self.sbTophi()
-            print >>f, "# Wavelength(nm)  Throughput(0-1)   Phi"
+            print("# Wavelength(nm)  Throughput(0-1)   Phi", file=f)
         else:
-            print >>f, "# Wavelength(nm)  Throughput(0-1)"
+            print("# Wavelength(nm)  Throughput(0-1)", file=f)
         # Loop through data, printing out to file.
         for i in range(0, len(self.wavelen), 1):
             if write_phi:
-                print >> f, self.wavelen[i], self.sb[i], self.phi[i]
+                print(self.wavelen[i], self.sb[i], self.phi[i], file=f)
             else:
-                print >> f, self.wavelen[i], self.sb[i]
+                print(self.wavelen[i], self.sb[i], file=f)
         f.close()
         return

@@ -1,8 +1,9 @@
+from builtins import object
 import copy
 import george
 import numpy as np
-from gp_utils import optimize
-from pca import pcaSED
+from .gp_utils import optimize
+from .pca import pcaSED
 from sklearn.neighbors import KNeighborsRegressor as knr
 
 

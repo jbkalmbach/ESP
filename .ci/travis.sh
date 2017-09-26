@@ -20,6 +20,7 @@ conda create --yes -n test python=$PYTHON_VERSION
 source activate test
 conda install numpy=$NUMPY_VERSION scipy setuptools pytest nose pytest-cov pip scikit-learn matplotlib
 conda install -c conda-forge pybind11
+pip install future
 pip install coverage
 pip install codecov
 pip install pylint

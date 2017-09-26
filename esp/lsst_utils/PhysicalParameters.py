@@ -1,4 +1,5 @@
 # pylint: skip-file
+from builtins import object
 __all__ = ["PhysicalParameters"]
 
 class PhysicalParameters(object):
