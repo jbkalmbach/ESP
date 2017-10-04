@@ -2,11 +2,11 @@ from __future__ import print_function
 import os
 import numpy as np
 from .spec_utils import specUtils
-from sklearn.decomposition import PCA as sklPCA
+from sklearn.decomposition import NMF as sklNMF
 from .lsst_utils.Sed import Sed
 
 
-class pcaSED(specUtils):
+class nmfSED(specUtils):
     """
     Performs Principal Component Analysis on a given library of spectra.
 
@@ -42,12 +42,11 @@ class pcaSED(specUtils):
     def __init__(self):
 
         # Required for a reduced spectra class
-        self.mean_spec = None
         self.eigenspectra = None
         self.coeffs = None
         self.wavelengths = None
         self.spec_names = None
-        self.decomp_type = 'PCA'
+        self.decomp_type = 'NMF'
 
         # Needed to perform PCA
         self.spec_list_orig = None
@@ -74,7 +73,7 @@ class pcaSED(specUtils):
 
         return
 
-    def PCA(self, comps, minWavelen=299., maxWavelen=1200.):
+    def NMF(self, comps, minWavelen=299., maxWavelen=1200.):
         """
         Perform the PCA.
 
@@ -126,11 +125,10 @@ class pcaSED(specUtils):
         for each bin. Then project the model spectra in each bin onto the
         eigenspectra and keep the desired number of principal components.
         """
-        spectra_pca = sklPCA(n_components=comps)
-        spectra_pca.fit(scaled_fluxes)
-        self.mean_spec = spectra_pca.mean_
-        self.eigenspectra = spectra_pca.components_
-        self.coeffs = np.array(spectra_pca.transform(scaled_fluxes))
+        spectra_nmf = sklNMF(n_components=comps)
+        spectra_nmf.fit(scaled_fluxes)
+        self.eigenspectra = spectra_nmf.components_
+        self.coeffs = np.array(spectra_nmf.transform(scaled_fluxes))
 
     def reconstruct_spectra(self, num_comps):
         """
@@ -146,9 +144,8 @@ class pcaSED(specUtils):
         reconstructed_specs: numpy array, [# of spectra, # of wavelength]
         The reconstructed spectra.
         """
-        reconstructed_specs = self.mean_spec + \
-            np.dot(self.coeffs[:, :num_comps],
-                   self.eigenspectra[:num_comps])
+        reconstructed_specs = np.dot(self.coeffs[:, :num_comps],
+                                     self.eigenspectra[:num_comps])
 
         return reconstructed_specs
 

@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.optimize as op
 
+
 def optimize(gp_obj, x, y, **kwargs):
 
     """

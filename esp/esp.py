@@ -4,6 +4,7 @@ import george
 import numpy as np
 from .gp_utils import optimize
 from .pca import pcaSED
+from .nmf import nmfSED
 from sklearn.neighbors import KNeighborsRegressor as knr
 
 
@@ -77,10 +78,13 @@ class nearestNeighborEstimate(estimateBase):
         neigh.fit(self.reduced_colors, self.reduced_spec.coeffs)
         pred_coeffs = neigh.predict(self.new_colors)
 
-        pred_spec = pcaSED()
+        if self.reduced_spec.decomp_type == 'PCA':
+            pred_spec = pcaSED()
+            pred_spec.mean_spec = self.reduced_spec.mean_spec
+        elif self.reduced_spec.decomp_type == 'NMF':
+            pred_spec = nmfSED()
         pred_spec.wavelengths = self.reduced_spec.wavelengths
         pred_spec.eigenspectra = self.reduced_spec.eigenspectra
-        pred_spec.mean_spec = self.reduced_spec.mean_spec
 
         pred_spec.coeffs = pred_coeffs
 
@@ -140,6 +144,11 @@ class gaussianProcessEstimate(estimateBase):
             kernel = scale*george.kernels.ExpKernel(length, ndim=n_dim)
         elif kernel_type == 'sq_exp':
             kernel = scale*george.kernels.ExpSquaredKernel(length, ndim=n_dim)
+        elif kernel_type == 'matern_32':
+            kernel = scale*george.kernels.Matern32Kernel(length, ndim=n_dim)
+        elif kernel_type == 'matern_52':
+            kernel = scale*george.kernels.Matern52Kernel(length, ndim=n_dim)
+
         else:
             raise Exception("Only currently accept 'exp' or 'sq_exp' as " +
                             "kernel types.")
@@ -177,7 +186,11 @@ class gaussianProcessEstimate(estimateBase):
 
         for coeff_num in range(n_coeffs):
 
-            gp_obj = george.GP(kernel_copy)
+            # Set the `white_noise` parameter lower than the default in george
+            # so that it doesn't get bigger than the small variations at less
+            # significant PCA coefficients
+            gp_obj = george.GP(kernel_copy,
+                               white_noise=np.log(np.square(1.25e-12)))
             gp_obj.compute(self.reduced_colors, 0.)
 
             gp_obj, pars = optimize(gp_obj, self.reduced_colors,
@@ -190,10 +203,13 @@ class gaussianProcessEstimate(estimateBase):
             if record_params is True:
                 params.append(pars)
 
-        pred_spec = pcaSED()
+        if self.reduced_spec.decomp_type == 'PCA':
+            pred_spec = pcaSED()
+            pred_spec.mean_spec = self.reduced_spec.mean_spec
+        elif self.reduced_spec.decomp_type == 'NMF':
+            pred_spec = nmfSED()
         pred_spec.wavelengths = self.reduced_spec.wavelengths
         pred_spec.eigenspectra = self.reduced_spec.eigenspectra
-        pred_spec.mean_spec = self.reduced_spec.mean_spec
 
         pred_coeffs = np.array(pred_coeffs)
         pred_spec.coeffs = np.transpose(pred_coeffs)
