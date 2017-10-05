@@ -25,19 +25,26 @@ def optimize(gp_obj, x, y, **kwargs):
 
     def _nll(pars):
 
-        gp_obj.set_parameter_vector(pars)
-        ll = gp_obj.log_likelihood(y, quiet=True)
+        #gp_obj.set_parameter_vector(pars)
+        gp_obj.kernel.vector = pars
+        #ll = gp_obj.log_likelihood(y, quiet=True)
+        ll = gp_obj.lnlikelihood(y, quiet=True)
         return -ll if np.isfinite(ll) else 1e25
 
     def _grad_nll(pars):
 
-        gp_obj.set_parameter_vector(pars)
-        return -gp_obj.grad_log_likelihood(y, quiet=True)
+        #gp_obj.set_parameter_vector(pars)
+        gp_obj.kernel.vector = pars
+        #return -gp_obj.grad_log_likelihood(y, quiet=True)
+        return -gp_obj.grad_lnlikelihood(y, quiet=True)
 
-    p0 = gp_obj.get_parameter_vector()
+    #p0 = gp_obj.get_parameter_vector()
+    p0 = gp_obj.kernel.vector
     if op_kwargs['method'] != 'Nelder-Mead':
         op_kwargs['jac'] = _grad_nll
     results = op.minimize(_nll, p0, **op_kwargs)
-    gp_obj.set_parameter_vector(results.x)
+    #gp_obj.set_parameter_vector(results.x)
+    gp_obj.kernel.vector = results.x
+    #print(results.message)
 
-    return gp_obj, results.x
+    return results.x, results

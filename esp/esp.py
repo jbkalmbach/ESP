@@ -2,6 +2,7 @@ import copy
 import george
 import numpy as np
 from pca import pcaSED
+from gp_utils import optimize
 from sklearn.neighbors import KNeighborsRegressor as knr
 
 
@@ -189,10 +190,12 @@ class gaussianProcessEstimate(estimateBase):
 
             gp_obj.compute(opt_colors, 0.)
 
-            pars, res = gp_obj.optimize(opt_colors,
-                                        self.reduced_spec.coeffs[:, coeff_num],
-                                        verbose=False,
-                                        method='Nelder-Mead')
+            #pars, res = gp_obj.optimize(opt_colors,
+            #                            self.reduced_spec.coeffs[:, coeff_num],
+            #                            verbose=False,
+            #                            method='Nelder-Mead')
+            pars, res = optimize(gp_obj, opt_colors,
+                                 self.reduced_spec.coeffs[:, coeff_num])
             kernel_type = self.kernel_type
             optimized_kernel = self.define_kernel(kernel_type,
                                                   np.exp(pars[0]),
