@@ -14,13 +14,20 @@ class estimateBase(object):
     Base class for spectra estimation methods.
     """
 
-    def __init__(self, reduced_spec, bandpass_dict, new_colors):
+    def __init__(self, reduced_spec, bandpass_dict, new_colors,
+                 train_bp_dict=None):
 
         self.reduced_spec = reduced_spec
         max_comps = len(self.reduced_spec.eigenspectra)
         self.reduced_colors = self.reduced_spec.calc_colors(bandpass_dict,
                                                             max_comps)
         self.new_colors = new_colors
+
+        if train_bp_dict is not None:
+            self.train_colors = self.reduced_spec.calc_colors(train_bp_dict,
+                                                              max_comps)
+        else:
+            self.train_colors = None
 
         return
 
@@ -107,9 +114,13 @@ class gaussianProcessEstimate(estimateBase):
     new_colors: numpy array, [n_objects, n_colors]
     The colors for the objects in the catalog for which you want to estimate
     spectra.
+
+    train_bp_dict: bandpass_dict object, default=None
+    If training filters should be different from prediction filters then
+    this is a bandpass dict with the full set of training bandpasses
     """
 
-    def define_kernel(self, kernel_type, length, scale):
+    def define_kernel(self, kernel_type, length, scale, n_dim=None):
 
         """
         Define the george kernel object for the Gaussian Processes.
@@ -138,20 +149,23 @@ class gaussianProcessEstimate(estimateBase):
         Regression.
         """
 
-        n_dim = len(self.new_colors[0])
+        if n_dim is None:
+            n_dim = len(self.new_colors[0])
 
-        if kernel_type == 'exp':
+        self.kernel_type = kernel_type
+
+        if self.kernel_type == 'exp':
             kernel = scale*george.kernels.ExpKernel(length, ndim=n_dim)
-        elif kernel_type == 'sq_exp':
+        elif self.kernel_type == 'sq_exp':
             kernel = scale*george.kernels.ExpSquaredKernel(length, ndim=n_dim)
-        elif kernel_type == 'matern_32':
+        elif self.kernel_type == 'matern_32':
             kernel = scale*george.kernels.Matern32Kernel(length, ndim=n_dim)
-        elif kernel_type == 'matern_52':
+        elif self.kernel_type == 'matern_52':
             kernel = scale*george.kernels.Matern52Kernel(length, ndim=n_dim)
 
         else:
-            raise Exception("Only currently accept 'exp' or 'sq_exp' as " +
-                            "kernel types.")
+            raise Exception("Only currently accept 'exp', 'sq_exp', " +
+                            "'matern_32' and 'matern_52' as kernel types.")
 
         return kernel
 
@@ -181,6 +195,14 @@ class gaussianProcessEstimate(estimateBase):
         n_coeffs = len(self.reduced_spec.coeffs[0])
         kernel_copy = copy.deepcopy(kernel)
 
+        if self.train_colors is not None:
+            train_dim = len(self.train_colors[0])
+            starting_params = np.exp(kernel_copy.get_parameter_vector())
+            train_kernel = self.define_kernel(self.kernel_type,
+                                                starting_params[0],
+                                                starting_params[1],
+                                                n_dim=train_dim)
+
         pred_coeffs = []
         params = []
 
@@ -191,13 +213,38 @@ class gaussianProcessEstimate(estimateBase):
             # significant PCA coefficients
             gp_obj = george.GP(kernel_copy,
                                white_noise=np.log(np.square(1.25e-12)))
+                               #white_noise=np.log(1.25e-12))
             gp_obj.compute(self.reduced_colors, 0.)
 
-            gp_obj, pars = optimize(gp_obj, self.reduced_colors,
-                                    self.reduced_spec.coeffs[:, coeff_num])
+            if self.train_colors is not None:
+                train_gp = george.GP(train_kernel,
+                                     white_noise=np.log(np.square(1.25e-12)))
+                                     #white_noise=np.log(1.25e-12))
+
+                train_gp.compute(self.train_colors, 0.)
+
+                train_gp, pars = optimize(train_gp, self.train_colors,
+                                          self.reduced_spec.coeffs[:,
+                                                                   coeff_num])
+
+                #if coeff_num == 0:
+                #    print(train_gp.kernel.get_parameter_vector(), pars, train_gp.log_likelihood(self.reduced_spec.coeffs[:,0]))
+
+                #print(pars)
+                pars[0] = np.log(np.exp(pars[0])*train_dim/len(self.new_colors[0]))
+                #print(pars)
+                gp_obj.set_parameter_vector(pars)
+
+            else:
+                gp_obj, pars = optimize(gp_obj, self.reduced_colors,
+                                        self.reduced_spec.coeffs[:,
+                                                                 coeff_num])
 
             mean, cov = gp_obj.predict(self.reduced_spec.coeffs[:, coeff_num],
                                        self.new_colors)
+
+            #if coeff_num == 0:
+            #    print(gp_obj.get_parameter_vector())
             pred_coeffs.append(mean)
 
             if record_params is True:
