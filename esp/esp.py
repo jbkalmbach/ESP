@@ -1,8 +1,8 @@
 import copy
 import george
 import numpy as np
-from pca import pcaSED
-from gp_utils import optimize
+from .pca import pcaSED
+from .gp_utils import optimize
 from sklearn.neighbors import KNeighborsRegressor as knr
 
 
@@ -171,6 +171,8 @@ class gaussianProcessEstimate(estimateBase):
         max_comps = len(self.reduced_spec.eigenspectra)
         opt_colors = self.reduced_spec.calc_colors(opt_bandpass_dict,
                                                    max_comps)
+        n_opt_colors = float(len(opt_colors[0]))
+        n_test_colors = float(len(self.new_colors[0]))
         # print opt_colors, self.reduced_colors
 
         pred_coeffs = []
@@ -185,7 +187,9 @@ class gaussianProcessEstimate(estimateBase):
             else:
                 #gp_obj = george.GP(optimized_kernel)
                 gp_obj = george.GP(kernel_copy)
-                gp_obj.kernel.vector = optimized_kernel.vector
+                #gp_obj.kernel.vector = optimized_kernel.vector
+                optimized_vector = optimized_kernel.get_parameter_vector()
+                gp_obj.set_parameter_vector(optimized_vector)
                 #gp_obj = george.GP(optimized_kernel)
 
             gp_obj.compute(opt_colors, 0.)
@@ -198,7 +202,9 @@ class gaussianProcessEstimate(estimateBase):
                                  self.reduced_spec.coeffs[:, coeff_num])
             kernel_type = self.kernel_type
             optimized_kernel = self.define_kernel(kernel_type,
-                                                  np.exp(pars[0]),
+                                                  (np.exp(pars[0]) *
+                                                   (n_opt_colors /
+                                                    n_test_colors)),
                                                   np.exp(pars[1]),
                                                   len(self.new_colors[0]))
             gp_obj_opt = george.GP(optimized_kernel)
