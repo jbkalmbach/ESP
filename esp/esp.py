@@ -130,7 +130,6 @@ class gaussianProcessEstimate(estimateBase):
         -------
         """
 
-        # n_dim = len(self.new_colors[0])
         self.kernel_type = kernel_type
 
         if kernel_type == 'exp':
@@ -173,7 +172,6 @@ class gaussianProcessEstimate(estimateBase):
                                                    max_comps)
         n_opt_colors = float(len(opt_colors[0]))
         n_test_colors = float(len(self.new_colors[0]))
-        # print opt_colors, self.reduced_colors
 
         pred_coeffs = []
         pred_var = []
@@ -185,19 +183,12 @@ class gaussianProcessEstimate(estimateBase):
             if optimized_kernel is None:
                 gp_obj = george.GP(kernel_copy)
             else:
-                #gp_obj = george.GP(optimized_kernel)
                 gp_obj = george.GP(kernel_copy)
-                #gp_obj.kernel.vector = optimized_kernel.vector
                 optimized_vector = optimized_kernel.get_parameter_vector()
                 gp_obj.set_parameter_vector(optimized_vector)
-                #gp_obj = george.GP(optimized_kernel)
 
             gp_obj.compute(opt_colors, 0.)
 
-            #pars, res = gp_obj.optimize(opt_colors,
-            #                            self.reduced_spec.coeffs[:, coeff_num],
-            #                            verbose=False,
-            #                            method='Nelder-Mead')
             pars, res = optimize(gp_obj, opt_colors,
                                  self.reduced_spec.coeffs[:, coeff_num])
             kernel_type = self.kernel_type
