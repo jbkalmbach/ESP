@@ -136,9 +136,14 @@ class gaussianProcessEstimate(estimateBase):
             kernel = scale*george.kernels.ExpKernel(length, ndim=n_dim)
         elif kernel_type == 'sq_exp':
             kernel = scale*george.kernels.ExpSquaredKernel(length, ndim=n_dim)
+        elif self.kernel_type == 'matern_32':
+            kernel = scale*george.kernels.Matern32Kernel(length, ndim=n_dim)
+        elif self.kernel_type == 'matern_52':
+            kernel = scale*george.kernels.Matern52Kernel(length, ndim=n_dim)
+
         else:
-            raise Exception("Only currently accept 'exp' or 'sq_exp' as " +
-                            "kernel types.")
+            raise Exception("Only currently accept 'exp', 'sq_exp', " +
+                            "'matern_32' and 'matern_52' as kernel types.")
 
         return kernel
 
