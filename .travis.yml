@@ -7,10 +7,10 @@ dist: trusty
 addons:
     apt:
         sources:
-#            - ubuntu-toolchain-r-test
+            - ubuntu-toolchain-r-test
         packages:
-#            - gcc-4.8
-#            - g++-4.8
+            - gcc-4.8
+            - g++-4.8
 
 env:
     global:
@@ -19,6 +19,11 @@ env:
 matrix:
     include:
 
+        # Linux
+        - os: linux
+          env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.12
+        - os: linux
+          env: PYTHON_VERSION=3.5 NUMPY_VERSION=1.12
 
         # OSX
         - os: osx
