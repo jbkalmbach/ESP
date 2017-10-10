@@ -242,14 +242,14 @@ class pcaSED(specUtils):
 
         eigenspectra = []
         spec_path = str(dir_path + '/eigenspectra/')
-        for spec_name in os.listdir(spec_path):
+        for spec_name in sorted(os.listdir(spec_path)):
             eigenspectra.append(np.loadtxt(str(spec_path + spec_name)))
         self.eigenspectra = np.array(eigenspectra)
 
         coeffs = []
         names = []
         comp_path = str(dir_path + '/coeffs/')
-        for comp_file in os.listdir(comp_path):
+        for comp_file in sorted(os.listdir(comp_path)):
             coeffs.append(np.loadtxt(str(comp_path + comp_file)))
             names.append(comp_file)
         self.coeffs = np.array(coeffs)

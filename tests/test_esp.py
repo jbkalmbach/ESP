@@ -119,13 +119,13 @@ class testESP(unittest.TestCase):
         test_gp = gaussianProcessEstimate(test_pca, self.test_bandpass_dict,
                                           [[0.0]])
 
-        test_exp_kernel = test_gp.define_kernel('exp', 1.0, 1.2, 
+        test_exp_kernel = test_gp.define_kernel('exp', 1.0, 1.2,
                                                 len(test_colors[0]))
 
         np.testing.assert_array_equal(test_exp_kernel.get_parameter_vector(),
                                       np.log([1.0, 1.2]))
 
-        test_sqexp_kernel = test_gp.define_kernel('sq_exp', 1.5, 1.7, 
+        test_sqexp_kernel = test_gp.define_kernel('sq_exp', 1.5, 1.7,
                                                   len(test_colors[0]))
         np.testing.assert_array_equal(test_sqexp_kernel.get_parameter_vector(),
                                       np.log([1.5, 1.7]))
@@ -144,7 +144,7 @@ class testESP(unittest.TestCase):
 
         test_gp = gaussianProcessEstimate(test_pca, self.test_bandpass_dict,
                                           [[0.0]])
-        test_kernel = test_gp.define_kernel('exp', 1.0, 1.0, 
+        test_kernel = test_gp.define_kernel('exp', 1.0, 1.0,
                                             len(test_colors[0]))
         test_gp_spec = test_gp.gp_predict(test_kernel,
                                           self.test_bandpass_dict)
