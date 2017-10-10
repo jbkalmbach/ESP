@@ -1,4 +1,5 @@
 import os
+import copy
 import unittest
 import shutil
 import numpy as np
@@ -14,10 +15,11 @@ class testESP(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-
+        # Create sample spectra and bandpasses for testing.
         sample_wavelen = np.arange(200, 1500)
         sample_flux = 100. * np.ones(1300)
 
+        # Bandpasses will be two top hat filters
         sb_1 = np.ones(400)
         sb_1[200:] -= 1.0
         sample_bandpass_1 = Bandpass(wavelen=np.arange(500, 900), sb=sb_1)
@@ -28,6 +30,7 @@ class testESP(unittest.TestCase):
                                                sample_bandpass_2],
                                               ['a', 'b'])
 
+        # Create SED with mag_filter_1 - mag_filter_2 = 0.2
         sample_sed = Sed()
         sample_sed.setSED(wavelen=sample_wavelen,
                           flambda=sample_flux)
@@ -44,6 +47,7 @@ class testESP(unittest.TestCase):
         sample_sed.setSED(wavelen=sample_wavelen, flambda=sample_sed_flambda)
         cls.sample_sed = sample_sed
 
+        # Create SED with mag_filter_1 - mag_filter_2 = -0.2
         sample_sed_2 = Sed()
         sample_sed_2.setSED(wavelen=sample_wavelen,
                             flambda=sample_flux)
@@ -61,6 +65,7 @@ class testESP(unittest.TestCase):
                             flambda=sample_sed_2_flambda)
         cls.sample_sed_2 = sample_sed_2
 
+        # Create SED with mag_filter_1 - mag_filter_2 = 0.0
         sample_sed_3 = Sed()
         sample_sed_3.setSED(wavelen=sample_wavelen,
                             flambda=sample_flux)
@@ -107,6 +112,22 @@ class testESP(unittest.TestCase):
         control_spec = su.scale_spectrum(self.sample_sed_3.flambda[50:1101])
         np.testing.assert_array_almost_equal(test_spec, control_spec)
 
+        # Test arguments to KNeighborsRegressor by making weight='distance'
+
+        test_esp_dist = nearestNeighborEstimate(test_pca,
+                                                self.test_bandpass_dict,
+                                                [[0.1]])
+        test_esp_spec = test_esp_dist.nn_predict(2, knr_args={'weights':
+                                                              'distance'})
+        test_spec_dist = test_esp_spec.reconstruct_spectra(2)[0]
+
+        sed_dist_1 = su.scale_spectrum(self.sample_sed.flambda)
+        sed_dist_2 = su.scale_spectrum(self.sample_sed_2.flambda)
+        control_spec_dist = sed_dist_1*3. + sed_dist_2
+        control_spec_dist = su.scale_spectrum(control_spec_dist[50:1101])
+        np.testing.assert_array_almost_equal(test_spec_dist,
+                                             control_spec_dist)
+
     def test_define_kernel(self):
 
         test_pca = pcaSED()
@@ -129,6 +150,16 @@ class testESP(unittest.TestCase):
                                                   len(test_colors[0]))
         np.testing.assert_array_equal(test_sqexp_kernel.get_parameter_vector(),
                                       np.log([1.5, 1.7]))
+
+        test_sqexp_kernel = test_gp.define_kernel('matern_32', 1.1, 1.7,
+                                                  len(test_colors[0]))
+        np.testing.assert_array_equal(test_sqexp_kernel.get_parameter_vector(),
+                                      np.log([1.1, 1.7]))
+
+        test_sqexp_kernel = test_gp.define_kernel('matern_52', 1.5, 1.9,
+                                                  len(test_colors[0]))
+        np.testing.assert_array_equal(test_sqexp_kernel.get_parameter_vector(),
+                                      np.log([1.5, 1.9]))
 
         with self.assertRaises(Exception):
             test_gp.define_kernel('rational_quadratic', 1.0, 1.0)
