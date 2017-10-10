@@ -1,3 +1,5 @@
+# Based upon conda version here:
+# https://conda.io/docs/user-guide/tasks/use-conda-with-travis-ci.html
 sudo: required
 dist: trusty
 
@@ -7,8 +9,7 @@ python:
   - "3.6"
 install:
   - sudo apt-get update
-  # We do this conditionally because it saves us some downloading if the
-  # version is the same.
+
   - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
       wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
     else
@@ -22,7 +23,6 @@ install:
   # Useful for debugging any issues with conda
   - conda info -a
 
-  # Replace dep1 dep2 ... with your dependencies
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
   - conda install -c conda-forge numpy scipy pybind11 matplotlib nose future scikit-learn
   - conda install -c conda-forge george codecov
