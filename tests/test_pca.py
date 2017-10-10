@@ -82,7 +82,7 @@ class testPCA(unittest.TestCase):
         else:
             first = 1
             second = 0
-        
+
         if py_version >= 3:
             self.assertCountEqual(test_pca.spec_list_orig[first].flambda,
                                   self.sample_spec[1])
@@ -97,6 +97,11 @@ class testPCA(unittest.TestCase):
     def test_PCA(self):
 
         test_pca = pcaSED()
+
+        # First test exception when no spectra given
+        with self.assertRaises(Exception):
+            test_pca.load_full_spectra()
+
         test_pca.load_full_spectra('scratch')
 
         test_pca.PCA(2, 249.9, 1300.1)
