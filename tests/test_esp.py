@@ -119,18 +119,19 @@ class testESP(unittest.TestCase):
         test_gp = gaussianProcessEstimate(test_pca, self.test_bandpass_dict,
                                           [[0.0]])
 
-        test_exp_kernel = test_gp.define_kernel('exp', 1.0, 1.2)
-        # The scale parameter is first when it comes out of the function
-        # because I define it by multiplying it in front of the kernel function
-        np.testing.assert_array_equal(test_exp_kernel.get_parameter_vector(),
-                                      np.log([1.2, 1.0]))
+        test_exp_kernel = test_gp.define_kernel('exp', 1.0, 1.2,
+                                                len(test_colors[0]))
 
-        test_sqexp_kernel = test_gp.define_kernel('sq_exp', 1.5, 1.7)
+        np.testing.assert_array_equal(test_exp_kernel.get_parameter_vector(),
+                                      np.log([1.0, 1.2]))
+
+        test_sqexp_kernel = test_gp.define_kernel('sq_exp', 1.5, 1.7,
+                                                  len(test_colors[0]))
         np.testing.assert_array_equal(test_sqexp_kernel.get_parameter_vector(),
-                                      np.log([1.7, 1.5]))
+                                      np.log([1.5, 1.7]))
 
         with self.assertRaises(Exception):
-            test_gp.define_kernel('matern', 1.0, 1.0)
+            test_gp.define_kernel('rational_quadratic', 1.0, 1.0)
 
     def test_gp_predict(self):
 
@@ -143,8 +144,10 @@ class testESP(unittest.TestCase):
 
         test_gp = gaussianProcessEstimate(test_pca, self.test_bandpass_dict,
                                           [[0.0]])
-        test_kernel = test_gp.define_kernel('exp', 1.0, 1.0)
-        test_gp_spec = test_gp.gp_predict(test_kernel)
+        test_kernel = test_gp.define_kernel('exp', 1.0, 1.0,
+                                            len(test_colors[0]))
+        test_gp_spec = test_gp.gp_predict(test_kernel,
+                                          self.test_bandpass_dict)
 
         su = specUtils()
         test_spec = test_gp_spec.reconstruct_spectra(2)[0]

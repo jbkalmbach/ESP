@@ -22,11 +22,12 @@ class testGPUtils(unittest.TestCase):
         test_gp_2 = george.GP(test_kernel_2)
         test_gp_2.compute(t)
 
-        gp_obj, pars = optimize(test_gp_2, t, y)
+        pars, results = optimize(test_gp_2, t, y)
 
-        # Optimize within 10% of original value
-
-        np.testing.assert_allclose(np.exp(pars), test_p, rtol=0.1)
+        # Optimize within 5% of original value
+        np.testing.assert_allclose(np.exp(pars), test_p, rtol=0.05)
+        # Make sure parameters are what we expect from results
+        np.testing.assert_equal(pars, results.x)
 
         test_p_3 = 9.0
 
@@ -34,13 +35,14 @@ class testGPUtils(unittest.TestCase):
         test_gp_3 = george.GP(test_kernel_3)
         test_gp_3.compute(t)
 
-        # Optimize with alternative method and check that result is within 10%
+        # Optimize with alternative method and check that result is within 5%
 
         kwargs = {'method': 'L-BFGS-B'}
-        gp_obj, pars_2 = optimize(test_gp_3, t, y, **kwargs)
+        pars_2, results_2 = optimize(test_gp_3, t, y, **kwargs)
 
-        np.testing.assert_allclose(np.exp(pars_2), test_p, rtol=0.1)
-
+        np.testing.assert_allclose(np.exp(pars_2), test_p, rtol=0.05)
+        # Make sure parameters are what we expect from results
+        np.testing.assert_equal(pars_2, results_2.x)
 
 if __name__ == '__main__':
 
