@@ -27,8 +27,8 @@ install:
   - conda install -c conda-forge numpy scipy pybind11 matplotlib nose future scikit-learn
   - conda install -c conda-forge george codecov
   - source activate test-environment
-  - conda install coverage pylint
+  - conda install coverage
 
 script:
   - nosetests -v -s --with-coverage --cover-package=esp
-  - pylint -E esp
+  - codecov
