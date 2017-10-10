@@ -132,7 +132,7 @@ class pcaSED(specUtils):
         self.coeffs = np.array(spectra_pca.transform(scaled_fluxes))
         self.exp_var = spectra_pca.explained_variance_ratio_
 
-    def reconstruct_spectra(self, num_comps, flag_neg=False):
+    def reconstruct_spectra(self, num_comps):
         """
         Reconstruct spectrum using only num_comps principal components.
 
@@ -150,18 +150,7 @@ class pcaSED(specUtils):
             np.dot(self.coeffs[:, :num_comps],
                    self.eigenspectra[:num_comps])
 
-        flagged = 0
-
-        for spec_num in range(len(reconstructed_specs)):
-            neg_idx = np.where(reconstructed_specs[spec_num] < 0.)[0]
-            reconstructed_specs[spec_num][neg_idx] = 0.
-            if len(neg_idx) > 0:
-                flagged += 1
-
-        if flag_neg is True:
-            return reconstructed_specs, flagged
-        else:
-            return reconstructed_specs
+        return reconstructed_specs
 
     def calc_colors(self, bandpass_dict, num_comps):
         """
@@ -169,6 +158,9 @@ class pcaSED(specUtils):
 
         Parameters
         ----------
+        bandpass_dict: dictionary of bandpass objects
+        Dictionary containing the bandpasses to use when calculating colors.
+
         num_comps: int
         Number of principal components to use to calculate spectra colors.
 

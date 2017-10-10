@@ -126,6 +126,10 @@ class gaussianProcessEstimate(estimateBase):
         will be changed when self.gp_predict optimizes each Gaussian Process
         for the respective PCA coefficients.
 
+        n_dim: int
+        Number of dimensions needed in the kernel. Should be equal to the
+        number of colors being used to optimize.
+
         Returns
         -------
         """
@@ -157,6 +161,10 @@ class gaussianProcessEstimate(estimateBase):
         kernel: george kernel object
         The kernel to use in the Gaussian Process regression. Can be created
         using self.define_kernel.
+
+        opt_bandpass_dict: dictionary of bandpass objects
+        The dictionary with the bandpasses that will be used to optimize
+        the hyperparameters of the Gaussian Processes.
 
         record_params: boolean, default=True
         If true it will record the log of the optimized hyperparameters
