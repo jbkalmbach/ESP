@@ -28,7 +28,7 @@ class specUtils(object):
         for root, dirs, files in os.walk(directory):
             file_total = len(files)
             file_on = 1
-            for name in files:
+            for name in sorted(files):
                 if file_on % 100 == 0:
                     print(str("File On " + str(file_on) + " out of " +
                               str(file_total)))
