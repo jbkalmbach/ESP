@@ -10,20 +10,9 @@ throughout the color space.
 
 ## Setup
 
-### Dependencies
+ESP is pip installable. From the command line run:
 
-ESP requires the following:
-
- * numpy
- * scikit-learn
- * george
- * matplotlib
-
-### To Run
-
-From command line (in bash terminal):
-
-    source setup/setup.sh
+    pip install esphot
 
 Now to use from python, just:
 
