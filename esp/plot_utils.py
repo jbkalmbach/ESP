@@ -3,6 +3,8 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 plt.style.use('ggplot')
 
+__all__ = ["plotUtils"]
+
 
 class plotUtils(object):
     """

@@ -3,7 +3,9 @@ from builtins import object
 import os
 import math
 import numpy as np
-from .lsst_utils.Sed import Sed
+from .lsst_utils import Sed
+
+__all__ = ["specUtils"]
 
 
 class specUtils(object):

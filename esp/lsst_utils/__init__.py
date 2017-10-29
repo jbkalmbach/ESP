@@ -1,4 +1,6 @@
-from .Bandpass import *
-from .BandpassDict import *
-from .PhysicalParameters import *
-from .Sed import *
+__all__ = ["Bandpass", "BandpassDict", "PhysicalParameters", "Sed"]
+
+from .Bandpass import Bandpass
+from .BandpassDict import BandpassDict
+from .PhysicalParameters import PhysicalParameters
+from .Sed import Sed

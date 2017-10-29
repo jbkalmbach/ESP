@@ -5,9 +5,9 @@ import numpy as np
 import sys
 from esp import pcaSED
 from esp import specUtils
-from esp.lsst_utils.Bandpass import Bandpass
-from esp.lsst_utils.BandpassDict import BandpassDict
-from esp.lsst_utils.Sed import Sed
+from esp.lsst_utils import Bandpass
+from esp.lsst_utils import BandpassDict
+from esp.lsst_utils import Sed
 from sklearn.decomposition import PCA as sklPCA
 
 py_version = sys.version_info.major

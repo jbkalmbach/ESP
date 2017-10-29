@@ -3,7 +3,9 @@ import os
 import numpy as np
 from .spec_utils import specUtils
 from sklearn.decomposition import PCA as sklPCA
-from .lsst_utils.Sed import Sed
+from .lsst_utils import Sed
+
+__all__ = ["pcaSED"]
 
 
 class pcaSED(specUtils):
