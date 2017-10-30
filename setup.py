@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="esphot",
-    version="0.1.0",
+    version="0.2.0",
     author="Bryce Kalmbach",
     author_email="brycek@uw.edu",
     url="https://github.com/jbkalmbach/esp",
