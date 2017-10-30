@@ -152,6 +152,10 @@ class pcaSED(specUtils):
             np.dot(self.coeffs[:, :num_comps],
                    self.eigenspectra[:num_comps])
 
+        for spec_num in range(len(reconstructed_specs)):		
+            neg_idx = np.where(reconstructed_specs[spec_num] < 0.)[0]		
+            reconstructed_specs[spec_num][neg_idx] = 0.
+
         return reconstructed_specs
 
     def calc_colors(self, bandpass_dict, num_comps):
