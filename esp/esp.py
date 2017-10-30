@@ -5,6 +5,9 @@ from .pca import pcaSED
 from .gp_utils import optimize
 from sklearn.neighbors import KNeighborsRegressor as knr
 
+__all__ = ["estimateBase", "NearestNeighborEstimate",
+           "gaussianProcessEstimate"]
+
 
 class estimateBase(object):
 

@@ -3,7 +3,9 @@ import os
 import numpy as np
 from .spec_utils import specUtils
 from sklearn.decomposition import PCA as sklPCA
-from .lsst_utils.Sed import Sed
+from .lsst_utils import Sed
+
+__all__ = ["pcaSED"]
 
 
 class pcaSED(specUtils):
@@ -149,6 +151,10 @@ class pcaSED(specUtils):
         reconstructed_specs = self.mean_spec + \
             np.dot(self.coeffs[:, :num_comps],
                    self.eigenspectra[:num_comps])
+
+        for spec_num in range(len(reconstructed_specs)):		
+            neg_idx = np.where(reconstructed_specs[spec_num] < 0.)[0]		
+            reconstructed_specs[spec_num][neg_idx] = 0.
 
         return reconstructed_specs
 

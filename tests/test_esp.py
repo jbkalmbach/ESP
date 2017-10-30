@@ -6,9 +6,9 @@ import numpy as np
 from esp import pcaSED
 from esp import nearestNeighborEstimate, gaussianProcessEstimate
 from esp import specUtils
-from esp.lsst_utils.Bandpass import Bandpass
-from esp.lsst_utils.BandpassDict import BandpassDict
-from esp.lsst_utils.Sed import Sed
+from esp.lsst_utils import Bandpass
+from esp.lsst_utils import BandpassDict
+from esp.lsst_utils import Sed
 
 
 class testESP(unittest.TestCase):
