@@ -205,7 +205,7 @@ class gaussianProcessEstimate(estimateBase):
 
             gp_obj.compute(opt_colors, 0.)
 
-            pars, res = optimize(gp_obj, opt_colors,
+            pars, res = optimize(gp_obj,
                                  self.reduced_spec.coeffs[:, coeff_num])
             kernel_type = self.kernel_type
             optimized_kernel = self.define_kernel(kernel_type,
