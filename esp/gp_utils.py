@@ -4,7 +4,7 @@ import scipy.optimize as op
 __all__ = ["optimize"]
 
 
-def optimize(gp_obj, x, y, **kwargs):
+def optimize(gp_obj, y, **kwargs):
 
     """
     Find the maximum likelihood values for the parameters of the Gaussian
@@ -15,10 +15,17 @@ def optimize(gp_obj, x, y, **kwargs):
     and optimize from george v0.2:
     https://github.com/dfm/george/blob/v0.2.0/george/gp.py
 
+    Requires gp_obj.compute to be run previously to set up input coordinate
+    locations.
+
     Parameters
     ----------
     gp_obj: george GP object
     The george object we are using for the Gaussian Process Regression
+
+    y: numpy array
+    The output values corresponding to the input values of your
+    training points.
     """
 
     op_kwargs = {'method': 'Nelder-Mead'}
