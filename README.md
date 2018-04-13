@@ -8,6 +8,8 @@ a set of bandpasses you can predict spectra for other points
 in the color space of your bands both interpolating and extrapolating
 throughout the color space.
 
+For more information read the [paper](https://arxiv.org/abs/1711.02219).
+
 ## Setup
 
 ESP is pip installable. From the command line run:
